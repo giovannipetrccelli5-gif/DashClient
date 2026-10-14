@@ -6,7 +6,8 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -138,7 +139,7 @@ public final class VillageFinderModule extends Module {
             if (!current.pos().equals(lastAnnounced)) {
                 lastAnnounced = current.pos();
                 BlockPos p = current.pos();
-                client.player.displayClientMessage(Component.literal(
+                client.gui.hud.setOverlayMessage(Component.literal(
                     "[DashClient] " + current.quality().label + " around XYZ "
                         + p.getX() + " " + p.getY() + " " + p.getZ()
                         + " (loaded chunks only)"), false);
@@ -160,8 +161,9 @@ public final class VillageFinderModule extends Module {
     }
 
     private Finding detect(Minecraft client) {
-        List<Villager> villagers = client.level.getEntitiesOfClass(
-            Villager.class, client.player.getBoundingBox().inflate(64.0), v -> true);
+        List<Entity> villagers = client.level.getEntitiesOfClass(
+            Entity.class, client.player.getBoundingBox().inflate(64.0),
+            entity -> entity.getType() == EntityType.VILLAGER);
         BlockPos playerPos = client.player.blockPosition();
         Finding best = null;
         double bestDistance = Double.POSITIVE_INFINITY;
@@ -184,7 +186,7 @@ public final class VillageFinderModule extends Module {
 
         // Villages do not always have bells. Multiple villagers with at least
         // one two-block bed can suggest a village but cannot prove generation.
-        for (Villager villager : villagers) {
+        for (Entity villager : villagers) {
             BlockPos pos = villager.blockPosition();
             int villagersNear = countVillagers(villagers, pos, 32);
             int bedsNear = countBlocks(beds, pos, 32);
@@ -200,9 +202,9 @@ public final class VillageFinderModule extends Module {
         return best;
     }
 
-    private static int countVillagers(List<Villager> villagers, BlockPos origin, int range) {
+    private static int countVillagers(List<Entity> villagers, BlockPos origin, int range) {
         int count = 0;
-        for (Villager villager : villagers)
+        for (Entity villager : villagers)
             if (squaredDistance(villager.blockPosition(), origin) <= range * range) count++;
         return count;
     }
