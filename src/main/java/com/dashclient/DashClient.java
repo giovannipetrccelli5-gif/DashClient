@@ -36,6 +36,17 @@ public final class DashClient implements ClientModInitializer {
     private static final AutoMinerModule MINER = new AutoMinerModule();
     private boolean configLoaded;
 
+    /** Mojang renamed KEYSYM to KEYBOARD between 26.2 and 26.3.
+     * Avoid linking a version-specific enum constant in compiled bytecode.
+     */
+    private static InputConstants.Type keyboardType() {
+        try {
+            return InputConstants.Type.valueOf("KEYBOARD");
+        } catch (IllegalArgumentException ignored) {
+            return InputConstants.Type.valueOf("KEYSYM");
+        }
+    }
+
     public static boolean isEnabled(String name) {
         Module module = MODULE_LOOKUP.get(name);
         return module != null && module.enabled();
@@ -61,32 +72,32 @@ public final class DashClient implements ClientModInitializer {
         KeyMapping.Category category = KeyMapping.Category.register(
             Identifier.fromNamespaceAndPath("dashclient", "controls"));
         MENU_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.dashclient.menu", InputConstants.Type.KEYBOARD,
+            "key.dashclient.menu", keyboardType(),
             InputConstants.KEY_RSHIFT, category));
         ZOOM_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.dashclient.zoom", InputConstants.Type.KEYBOARD,
+            "key.dashclient.zoom", keyboardType(),
             InputConstants.KEY_C, category));
         // Rebindable in Minecraft Settings > Controls > Key Binds > DashClient.
         AUTO_CLICKER_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.dashclient.auto_clicker", InputConstants.Type.KEYBOARD,
+            "key.dashclient.auto_clicker", keyboardType(),
             InputConstants.KEY_K, category));
         XRAY_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.dashclient.xray", InputConstants.Type.KEYBOARD,
+            "key.dashclient.xray", keyboardType(),
             InputConstants.KEY_X, category));
         FREECAM_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.dashclient.freecam", InputConstants.Type.KEYBOARD,
+            "key.dashclient.freecam", keyboardType(),
             InputConstants.KEY_F6, category));
         AUTO_MINER_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.dashclient.auto_miner", InputConstants.Type.KEYBOARD,
+            "key.dashclient.auto_miner", keyboardType(),
             InputConstants.KEY_F7, category));
         VILLAGE_FINDER_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.dashclient.village_finder", InputConstants.Type.KEYBOARD,
+            "key.dashclient.village_finder", keyboardType(),
             InputConstants.KEY_V, category));
         EDIT_HUD_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.dashclient.edit_hud", InputConstants.Type.KEYBOARD,
+            "key.dashclient.edit_hud", keyboardType(),
             InputConstants.KEY_J, category));
         CLEAN_HUD_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.dashclient.clean_hud", InputConstants.Type.KEYBOARD,
+            "key.dashclient.clean_hud", keyboardType(),
             InputConstants.KEY_B, category));
 
         MODULES.add(new HudModules.Fps());

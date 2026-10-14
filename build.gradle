@@ -24,9 +24,17 @@ tasks.named('test', Test).configure {
 }
 
 processResources {
+    // A different metadata file is produced for each Minecraft target. Do
+    // not reuse a 26.3 manifest in a 26.2 build (or vice versa).
     inputs.property "version", project.version
+    inputs.property "minecraft_version", project.minecraft_version
+    inputs.property "fabric_api_version", project.fabric_api_version
     filesMatching("fabric.mod.json") {
-        expand "version": project.version
+        expand(
+            "version": project.version,
+            "minecraft_version": project.minecraft_version,
+            "fabric_api_version": project.fabric_api_version
+        )
     }
 }
 tasks.withType(JavaCompile).configureEach {

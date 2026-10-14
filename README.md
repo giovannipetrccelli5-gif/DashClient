@@ -1,6 +1,6 @@
 # DashClient
 
-A client-side Fabric module collection for **Minecraft 26.3**, Java 25.
+A client-side Fabric module collection for **Minecraft 26.2 and 26.3**, Java 25.
 Built with GitHub Actions. Compatible with other optimization mods because
 DashClient does not inject into chunk rendering, world renderers, lighting,
 Sodium, Entity Culling or other mods.
@@ -94,11 +94,17 @@ release and remain at approximately the same location when resizing the window.
 **Reset Positions** restores the default layout.
 Only enabled modules with visible text are draggable.
 
-### Download
-[Latest compiled JAR](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/dashclient-1.0.0.jar)
-or [Release page](https://github.com/giovannipetrccelli5-gif/DashClient/releases/tag/dev-build).
-Install the JAR into your Minecraft Fabric mods folder. Compilation
-and unit tests run in GitHub Actions; gameplay should be tested separately.
+### Download: choose your Minecraft version
+- **Minecraft 26.2**: [DashClient JAR for 26.2](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/dashclient-1.0.0-mc26.2.jar) or [phone ZIP for 26.2](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/DashClient-Phone-Download-mc26.2.zip).
+- **Minecraft 26.3**: [DashClient JAR for 26.3](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/dashclient-1.0.0-mc26.3.jar) or [phone ZIP for 26.3](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/DashClient-Phone-Download-mc26.3.zip).
+
+Older [JAR](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/dashclient-1.0.0.jar)
+and [phone ZIP](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/DashClient-Phone-Download.zip)
+links remain usable and refer to **26.3**. Install exactly one DashClient JAR
+matching your Minecraft version in your Fabric `mods` folder.
+The GitHub Actions workflow compiles and tests against both Minecraft versions,
+checks each JAR's version-specific Fabric metadata, and publishes both downloads.
+Gameplay on Android/PojavLauncher still requires runtime verification.
 
 ### Experimental Combat & Visual modules (19)
 - **Auto Clicker**: up to four attempts/second at a crosshair-selected

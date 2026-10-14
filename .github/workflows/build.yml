@@ -25,8 +25,20 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: current
-      - name: Build and run tests
-        run: gradle build --no-daemon
+      - name: Build and run tests on 26.2 and 26.3
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          for mc in 26.2 26.3; do
+            case "$mc" in
+              26.2) api='0.161.0+26.2' ;;
+              26.3) api='0.160.5+26.3' ;;
+            esac
+            echo "::group::Minecraft $mc / Fabric API $api"
+            gradle clean build --no-daemon -Pminecraft_version="$mc" -Pfabric_api_version="$api"
+            cp build/libs/dashclient-1.0.0.jar "dist/dashclient-1.0.0-mc$mc.jar"
+            echo "::endgroup::"
+          done
       - name: Audit module names and config keys
         run: |
           python3 - <<'PY'
@@ -56,35 +68,38 @@ jobs:
           assert all(0<len(name)<=120 for _,name,_ in names)
           print(f'Audited {len(names)} module identifiers: no duplicate preference keys')
           PY
-      - name: Validate built JAR
+      - name: Validate both built JARs and exact Minecraft dependencies
         run: |
           python3 - <<'PY'
-          import glob, json, zipfile
-          jars = [p for p in glob.glob('build/libs/*.jar')
-                  if not p.endswith('-sources.jar')]
-          assert len(jars) == 1, f'Expected one mod JAR; found {jars}'
-          with zipfile.ZipFile(jars[0]) as jar:
-              manifest = json.loads(jar.read('fabric.mod.json'))
-              assert manifest['id'] == 'dashclient'
-              assert manifest['depends']['minecraft'] == '26.3'
-              assert 'com/dashclient/DashClient.class' in jar.namelist()
-              for name in ('InventoryPack', 'WorldPack', 'StatusPack',
-                           'AdvancedHudPack', 'PerformanceModule',
-                           'AdaptiveFpsModule', 'AdaptiveDistancePolicy',
-                           'CombatVisualPack', 'AutoTotemModule',
-                           'AutoElytraModule', 'ElytraFinderModule',
-                           'ExpandedModulePack', 'AutoClickerModule', 'OreXrayModule',
-                           'VillageFinderModule', 'FreecamModule', 'AutoMinerModule',
-                           'DeviceHealthPack', 'UtilityModulePack',
-                           'QualityOfLifePack'):
-                  assert f'com/dashclient/modules/{name}.class' in jar.namelist()
-              for name in ('ClientFileInbox', 'ClientImportsScreen', 'DashScreen',
-                           'DashSettingsScreen', 'ModuleHelp', 'AutoMinerScreen'):
-                  assert f'com/dashclient/{name}.class' in jar.namelist()
-              assert 'dashclient.mixins.json' in jar.namelist()
-              for name in ('FreecamLookMixin', 'FreecamInteractionMixin'):
-                  assert f'com/dashclient/mixin/{name}.class' in jar.namelist()
-          print('JAR structure and metadata verified:', jars[0])
+          import json, pathlib, zipfile
+          expected = {'26.2': '0.161.0+26.2', '26.3': '0.160.5+26.3'}
+          for mc, api in expected.items():
+              jar_path = pathlib.Path(f'dist/dashclient-1.0.0-mc{mc}.jar')
+              assert jar_path.is_file(), f'Missing build: {jar_path}'
+              with zipfile.ZipFile(jar_path) as jar:
+                  names = set(jar.namelist())
+                  manifest = json.loads(jar.read('fabric.mod.json'))
+                  assert manifest['id'] == 'dashclient'
+                  assert manifest['depends']['minecraft'] == mc, (jar_path, manifest)
+                  assert manifest['depends']['fabric-api'] == '>=' + api, (jar_path, manifest)
+                  assert 'com/dashclient/DashClient.class' in names
+                  for name in ('InventoryPack', 'WorldPack', 'StatusPack',
+                               'AdvancedHudPack', 'PerformanceModule',
+                               'AdaptiveFpsModule', 'AdaptiveDistancePolicy',
+                               'CombatVisualPack', 'AutoTotemModule',
+                               'AutoElytraModule', 'ElytraFinderModule',
+                               'ExpandedModulePack', 'AutoClickerModule', 'OreXrayModule',
+                               'VillageFinderModule', 'FreecamModule', 'AutoMinerModule',
+                               'DeviceHealthPack', 'UtilityModulePack',
+                               'QualityOfLifePack'):
+                      assert f'com/dashclient/modules/{name}.class' in names, name
+                  for name in ('ClientFileInbox', 'ClientImportsScreen', 'DashScreen',
+                               'DashSettingsScreen', 'ModuleHelp', 'AutoMinerScreen'):
+                      assert f'com/dashclient/{name}.class' in names, name
+                  assert 'dashclient.mixins.json' in names
+                  for name in ('FreecamLookMixin', 'FreecamInteractionMixin'):
+                      assert f'com/dashclient/mixin/{name}.class' in names
+              print(f'Minecraft {mc}: metadata and JAR contents validated: {jar_path}')
           PY
       # Upload only when explicitly enabled: GitHub reports this account's artifact quota is full.
       # Optional repository Actions variable: DASHCLIENT_UPLOAD_ARTIFACT=true
@@ -92,21 +107,27 @@ jobs:
         if: vars.DASHCLIENT_UPLOAD_ARTIFACT == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: DashClient-jar
-          path: build/libs/*.jar
+          name: DashClient-26.2-and-26.3-jars
+          path: dist/*.jar
           if-no-files-found: error
-      - name: Create Android-friendly ZIP
+      - name: Create two Android-friendly ZIP downloads
         run: |
           python3 - <<'PY'
-          import glob, pathlib, zipfile
-          jars = [p for p in glob.glob('build/libs/dashclient-*.jar')
-                  if not p.endswith('-sources.jar')]
-          assert len(jars) == 1, f'Expected one mod JAR; got {jars}'
-          with zipfile.ZipFile('DashClient-Phone-Download.zip', 'w', zipfile.ZIP_DEFLATED) as z:
-              z.write(jars[0], arcname=pathlib.Path(jars[0]).name)
-          with zipfile.ZipFile('DashClient-Phone-Download.zip') as z:
-              assert z.testzip() is None
-              assert z.namelist() == [pathlib.Path(jars[0]).name]
+          import pathlib, zipfile, shutil
+          dist = pathlib.Path('dist')
+          for mc in ('26.2', '26.3'):
+              jar = dist / f'dashclient-1.0.0-mc{mc}.jar'
+              zip_path = dist / f'DashClient-Phone-Download-mc{mc}.zip'
+              with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as z:
+                  z.write(jar, arcname=jar.name)
+              with zipfile.ZipFile(zip_path) as z:
+                  assert z.testzip() is None
+                  assert z.namelist() == [jar.name]
+          # Preserve existing legacy download URLs, pointing to 26.3.
+          shutil.copyfile(dist / 'dashclient-1.0.0-mc26.3.jar',
+                          dist / 'dashclient-1.0.0.jar')
+          shutil.copyfile(dist / 'DashClient-Phone-Download-mc26.3.zip',
+                          dist / 'DashClient-Phone-Download.zip')
           PY
       - name: Publish jar and ZIP to GitHub Releases
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -114,7 +135,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           if gh release view dev-build >/dev/null 2>&1; then
-            gh release upload dev-build build/libs/dashclient-*.jar DashClient-Phone-Download.zip --clobber
+            gh release upload dev-build dist/* --clobber
           else
-            gh release create dev-build build/libs/dashclient-*.jar DashClient-Phone-Download.zip --target "$GITHUB_SHA" --title "DashClient development build" --prerelease --notes "Minecraft 26.3 Fabric client; automatically built from the main branch."
+            gh release create dev-build dist/* --target "$GITHUB_SHA" --title "DashClient development build" --prerelease --notes "Minecraft 26.2 and 26.3 Fabric client; choose the correct JAR for your Minecraft version. Automatically built and tested for both versions."
           fi
