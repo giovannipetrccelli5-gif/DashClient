@@ -45,8 +45,10 @@ jobs:
                            'CombatVisualPack', 'AutoTotemModule',
                            'AutoElytraModule', 'ElytraFinderModule',
                            'ExpandedModulePack', 'AutoClickerModule',
-                           'DeviceHealthPack', 'ClientFileInbox', 'ClientImportsScreen'):
+                           'DeviceHealthPack'):
                   assert f'com/dashclient/modules/{name}.class' in jar.namelist()
+              for name in ('ClientFileInbox', 'ClientImportsScreen', 'DashScreen'):
+                  assert f'com/dashclient/{name}.class' in jar.namelist()
           print('JAR structure and metadata verified:', jars[0])
           PY
       # Upload only when explicitly enabled: GitHub reports this account's artifact quota is full.
