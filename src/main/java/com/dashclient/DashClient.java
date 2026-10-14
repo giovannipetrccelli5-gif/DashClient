@@ -25,10 +25,10 @@ public final class DashClient implements ClientModInitializer {
         KeyMapping.Category category = KeyMapping.Category.register(
             Identifier.fromNamespaceAndPath("dashclient", "controls"));
         MENU_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.dashclient.menu", InputConstants.Type.KEYSYM,
-            InputConstants.KEY_RIGHT_SHIFT, category));
+            "key.dashclient.menu", InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_RSHIFT, category));
         ZOOM_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.dashclient.zoom", InputConstants.Type.KEYSYM,
+            "key.dashclient.zoom", InputConstants.Type.KEYBOARD,
             InputConstants.KEY_C, category));
 
         MODULES.add(new HudModules.Fps());
@@ -55,7 +55,7 @@ public final class DashClient implements ClientModInitializer {
         HudElementRegistry.addLast(
             Identifier.fromNamespaceAndPath("dashclient", "overlay"), (graphics, delta) -> {
                 Minecraft client = Minecraft.getInstance();
-                if (client.player == null || client.options.hideGui) return;
+                if (client.player == null) return;
                 int y = 6;
                 for (Module module : MODULES) {
                     if (!module.enabled()) continue;
