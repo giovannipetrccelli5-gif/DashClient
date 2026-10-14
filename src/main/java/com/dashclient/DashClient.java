@@ -118,6 +118,16 @@ public final class DashClient implements ClientModInitializer {
                 boolean transparent = isEnabled("HUD Transparent");
                 int ordinal = 0;
 
+                // Icon HUDs render from current equipment every frame, allowing
+                // enchanted glint, durability bars and the totem count to update.
+                for (Module module : MODULES) {
+                    if (!module.enabled() || !module.customHud()) continue;
+                    HudLayout.Point position = HudLayout.position(module, 0, sw, sh,
+                        module.hudWidth(client), module.hudHeight(client), gap, right);
+                    if (position != null)
+                        module.renderHud(client, graphics, position.x(), position.y());
+                }
+
                 for (HudFrameCache.Line line : HudFrameCache.lines()) {
                     Module module = line.module();
                     int tw = line.width();

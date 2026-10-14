@@ -1,6 +1,7 @@
 package com.dashclient;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 public abstract class Module {
     private final String name;
@@ -25,4 +26,11 @@ public abstract class Module {
     public void onDisable() {}
     public void onTick(Minecraft client) {}
     public String hudText(Minecraft client) { return null; }
+
+    // Non-text modules have a rendered icon area with their own dimensions.
+    public boolean customHud() { return false; }
+    public int hudWidth(Minecraft client) { return 0; }
+    public int hudHeight(Minecraft client) { return 12; }
+    public void renderHud(Minecraft client, GuiGraphicsExtractor graphics, int x, int y) {}
+
 }

@@ -27,32 +27,48 @@ public final class HudLayout {
 
     public static Point position(Module module, int visibleIndex, int screenW, int screenH,
                                  int textW, int lineHeight, boolean right) {
+        return position(module, visibleIndex, screenW, screenH, textW, 12, lineHeight, right);
+    }
+
+    /** Exact element dimensions let icon HUDs reach the very bottom edge safely. */
+    public static Point position(Module module, int visibleIndex, int screenW, int screenH,
+                                 int elementWidth, int elementHeight, int lineHeight, boolean right) {
         Normalized saved = CUSTOM.get(module.name());
         int x, y;
         if (saved != null) {
-            x = (int)Math.round(saved.x * screenW);
-            y = (int)Math.round(saved.y * screenH);
+            x = (int) Math.round(saved.x * screenW);
+            y = (int) Math.round(saved.y * screenH);
+        } else if (module.customHud() && module.name().equals("Armor/Item HUD")) {
+            // Screenshot-inspired starting point centered just above the hotbar.
+            x = (screenW - elementWidth) / 2;
+            y = screenH - elementHeight - 33;
         } else {
             int cellWidth = Math.min(190, Math.max(110, screenW - 12));
             int rows = Math.max(1, (screenH - 14) / lineHeight);
             int column = visibleIndex / rows;
             int row = visibleIndex % rows;
-            x = right ? screenW - 25 - textW - column * (cellWidth + 4)
+            x = right ? screenW - 25 - elementWidth - column * (cellWidth + 4)
                 : 25 + column * (cellWidth + 4);
             y = 18 + row * lineHeight;
-            if (x + textW + 4 > screenW || x < 0) return null;
+            if (x + elementWidth > screenW || x < 0) return null;
         }
-        return new Point(clamp(x, 4, Math.max(4, screenW - textW - 4)),
-            clamp(y, 4, Math.max(4, screenH - 14)));
+        return new Point(clamp(x, 0, Math.max(0, screenW - elementWidth)),
+            clamp(y, 0, Math.max(0, screenH - elementHeight)));
     }
 
     public static void move(Module module, int x, int y, int screenW, int screenH,
-                            int textWidth) {
-        int clampedX = clamp(x, 4, Math.max(4, screenW - textWidth - 4));
-        int clampedY = clamp(y, 4, Math.max(4, screenH - 14));
+                            int elementWidth) {
+        move(module, x, y, screenW, screenH, elementWidth, 12);
+    }
+
+    /** Dragging has no artificial top/bottom tool-panel exclusion zones. */
+    public static void move(Module module, int x, int y, int screenW, int screenH,
+                            int elementWidth, int elementHeight) {
+        int clampedX = clamp(x, 0, Math.max(0, screenW - elementWidth));
+        int clampedY = clamp(y, 0, Math.max(0, screenH - elementHeight));
         CUSTOM.put(module.name(), new Normalized(
-            (double)clampedX / Math.max(1, screenW),
-            (double)clampedY / Math.max(1, screenH)));
+            (double) clampedX / Math.max(1, screenW),
+            (double) clampedY / Math.max(1, screenH)));
     }
 
     private static int clamp(int n, int min, int max) {
