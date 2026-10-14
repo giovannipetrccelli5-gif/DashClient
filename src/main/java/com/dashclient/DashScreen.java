@@ -35,6 +35,7 @@ public final class DashScreen extends Screen {
     private boolean enabledOnly;
     private Button favoritesFilterButton, enabledFilterButton;
     private Module selectedModule;
+    private Module lastInteractedModule;
     private int dragStartX, dragStartY;
     private boolean dragMoved;
     private record Tile(Module module, int x, int y, int width, int height) {}
@@ -126,7 +127,7 @@ public final class DashScreen extends Screen {
 
         int tabY = panelY + 44;
         // Fit all navigation tabs above the bottom toolbar even at Pojav GUI scales.
-        int tabSpacing = Math.max(18, Math.min(25, (panelH - 90) / TABS.length));
+        int tabSpacing = Math.max(13, Math.min(25, (panelH - 94) / TABS.length));
         for (int i = 0; i < TABS.length; i++) {
             final int selected = i;
             String symbol = switch (TABS[i]) {
@@ -250,6 +251,7 @@ public final class DashScreen extends Screen {
             while (!name.isEmpty() && font.width(icon + name + state) > buttonW - 30)
                 name = name.substring(0, name.length() - 1);
             Button tileButton = Button.builder(Component.literal(icon + name + state), b -> {
+                lastInteractedModule = module;
                 if (arrangeMode) {
                     if (selectedModule == null) selectedModule = module;
                     else if (selectedModule != module) {
@@ -266,6 +268,7 @@ public final class DashScreen extends Screen {
             moduleButtons.add(addRenderableWidget(tileButton));
             Button favorite = Button.builder(Component.literal(
                 ModuleFavorites.contains(module) ? "★" : "☆"), b -> {
+                lastInteractedModule = module;
                 ModuleFavorites.toggle(module);
                 refreshCards();
             }).bounds(x + buttonW - 20, y, 20, 23).build();
@@ -327,13 +330,25 @@ public final class DashScreen extends Screen {
         g.fill(panelX + 3, panelY + 30, panelX + panelW - 3, panelY + 32, 0xFF30749E);
         g.fill(contentX - 5, panelY + 34, contentX - 3, panelY + panelH - 35, 0xFF32729F);
         super.extractRenderState(g, mouseX, mouseY, delta);
+        // Draw subtle card borders and a hover accent without expensive blur.
+        Module hovered = null;
+        for (Tile tile : tiles) {
+            if (mouseX >= tile.x && mouseX < tile.x + tile.width
+                    && mouseY >= tile.y && mouseY < tile.y + tile.height) {
+                hovered = tile.module;
+                g.fill(tile.x, tile.y, tile.x + tile.width, tile.y + 1,
+                    0xFF67CFFF);
+                g.fill(tile.x, tile.y + tile.height - 1,
+                    tile.x + tile.width, tile.y + tile.height, 0xFF67CFFF);
+            }
+        }
         // Clear enabled/disabled accent rails make scanning a large module list easy.
         for (Tile tile : tiles) {
             int accent = tile.module.enabled() ? 0xFF5DD9AB : 0xFF47556B;
             g.fill(tile.x + 1, tile.y + 3, tile.x + 3,
                 tile.y + tile.height - 3, accent);
         }
-        int navSpacing = Math.max(18, Math.min(25, (panelH - 90) / TABS.length));
+        int navSpacing = Math.max(13, Math.min(25, (panelH - 94) / TABS.length));
         g.fill(panelX + 5, panelY + 44 + selectedTab * navSpacing,
             panelX + 8, panelY + 44 + selectedTab * navSpacing +
             Math.min(22, navSpacing - 1), 0xFF77E2FF);
@@ -354,9 +369,15 @@ public final class DashScreen extends Screen {
                     tile.x + tile.width + 2, tile.y + tile.height + 2, 0xFF77E2FF);
             }
         }
-        g.centeredText(font, (arrangeMode ? "Tap a module, then its new spot | "
-            : favoritesOnly ? "Favorites | " : enabledOnly ? "Enabled | " : TABS[selectedTab] + " | ") +
-            "Page " + (page + 1) + "/" + pages,
+        Module info = hovered != null ? hovered : lastInteractedModule;
+        String hint = arrangeMode
+            ? "Arrange: tap a module then another, or drag between tiles"
+            : ModuleHelp.describe(info);
+        String pagination = " | " + (page + 1) + "/" + pages;
+        int available = Math.max(45, contentW - 6);
+        while (!hint.isEmpty() && font.width(hint + pagination) > available)
+            hint = hint.substring(0, hint.length() - 1);
+        g.centeredText(font, hint + pagination,
             contentX + contentW / 2, panelY + panelH - 43, 0xFFA9CDEA);
     }
 }
