@@ -39,7 +39,9 @@ jobs:
               assert manifest['id'] == 'dashclient'
               assert manifest['depends']['minecraft'] == '26.3'
               assert 'com/dashclient/DashClient.class' in jar.namelist()
-              for name in ('InventoryPack', 'WorldPack', 'StatusPack'):
+              for name in ('InventoryPack', 'WorldPack', 'StatusPack',
+                           'AdvancedHudPack', 'PerformanceModule',
+                           'AdaptiveFpsModule', 'AdaptiveDistancePolicy'):
                   assert f'com/dashclient/modules/{name}.class' in jar.namelist()
           print('JAR structure and metadata verified:', jars[0])
           PY

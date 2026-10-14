@@ -69,9 +69,14 @@ public final class DashClient implements ClientModInitializer {
         InventoryPack.register(MODULES);
         WorldPack.register(MODULES);
         StatusPack.register(MODULES);
+        MODULES.add(new PerformanceModule("Extreme FPS", true));
+        MODULES.add(new AdaptiveFpsModule());
+        AdvancedHudPack.register(MODULES);
+        HudLayout.load();
         Config.load();
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            AdvancedHudPack.sample(client);
             while (MENU_KEY.consumeClick()) {
                 if (client.gui.screen() == null) client.gui.setScreen(new DashScreen());
             }
@@ -83,42 +88,37 @@ public final class DashClient implements ClientModInitializer {
         HudElementRegistry.addLast(
             Identifier.fromNamespaceAndPath("dashclient", "overlay"), (graphics, delta) -> {
                 Minecraft client = Minecraft.getInstance();
-                if (client.player == null) return;
+                if (client.player == null || client.gui.screen() instanceof HudEditorScreen)
+                    return;
                 if (isEnabled("HUD Gameplay Only") && client.gui.screen() != null) return;
-                int screenWidth = client.getWindow().getGuiScaledWidth();
-                int screenHeight = client.getWindow().getGuiScaledHeight();
-                int width = Math.min(190, Math.max(110, screenWidth - 12));
-                int columns = Math.max(1, screenWidth / (width + 4));
+
+                int sw = client.getWindow().getGuiScaledWidth();
+                int sh = client.getWindow().getGuiScaledHeight();
                 int gap = isEnabled("HUD Compact") ? 11 : 14;
                 boolean right = isEnabled("HUD Right Align");
-                boolean transparent = isEnabled("HUD Transparent");
                 boolean rainbow = isEnabled("HUD Rainbow");
-                int row = 0, column = 0;
+                boolean transparent = isEnabled("HUD Transparent");
+                int maxTextWidth = Math.min(190, Math.max(100, sw - 12)) - 12;
+                int ordinal = 0;
+
                 for (Module module : MODULES) {
-                    if (column >= columns) break;
                     if (!module.enabled()) continue;
                     String value = module.hudText(client);
                     if (value == null || value.isBlank()) continue;
-                    if (row * gap + 18 > screenHeight) {
-                        row = 0;
-                        column++;
-                    }
-                    if (column >= columns) break; // Never draw past the visible HUD area.
-                    int available = width - 12;
-                    while (!value.isEmpty() && client.font.width(value) > available)
+                    while (!value.isEmpty() && client.font.width(value) > maxTextWidth)
                         value = value.substring(0, value.length() - 1);
                     if (value.isEmpty()) continue;
-                    int x = right ? screenWidth - 8 - client.font.width(value) - column * (width + 4)
-                        : 8 + column * (width + 4);
-                    int y = 6 + row * gap;
+                    int tw = client.font.width(value);
+                    HudLayout.Point pos = HudLayout.position(module, ordinal++, sw, sh,
+                        tw, gap, right);
+                    if (pos == null) continue;
+                    int x = pos.x(), y = pos.y();
                     if (!transparent)
-                        graphics.fill(x - 4, y - 2, x + client.font.width(value) + 4,
-                            y + 11, 0x880D1421);
-                    int color = rainbow ? java.awt.Color.HSBtoRGB(
-                        ((System.currentTimeMillis() / 28L + row * 18L) % 360L) / 360f,
-                        0.72f, 1f) | 0xFF000000 : 0xFFFFFFFF;
+                        graphics.fill(x - 4, y - 2, x + tw + 4, y + 11, 0x880D1421);
+                    int color = rainbow ? (java.awt.Color.HSBtoRGB(
+                        ((System.currentTimeMillis() / 28L + ordinal * 18L) % 360L) / 360f,
+                        0.72f, 1f) | 0xFF000000) : 0xFFFFFFFF;
                     graphics.text(client.font, value, x, y, color, true);
-                    row++;
                 }
             }
         );
