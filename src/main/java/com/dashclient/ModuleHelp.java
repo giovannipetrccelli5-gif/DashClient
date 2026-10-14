@@ -19,7 +19,6 @@ public final class ModuleHelp {
             case "Module List HUD" -> "Draggable list of up to twelve active modules";
             case "Clean Screenshot HUD" -> "Hides DashClient overlays while enabled";
             case "Streamer Privacy HUD" -> "Hides common names, coords and server readouts";
-            case "Auto Use" -> "Holds the use button while you play";
             case "Auto Totem" -> "Moves spare totems into the offhand when available";
             case "Auto Elytra" -> "Equips an Elytra from inventory and starts normal gliding";
             case "Elytra Finder" -> "Finds dropped or displayed Elytras in loaded chunks";
