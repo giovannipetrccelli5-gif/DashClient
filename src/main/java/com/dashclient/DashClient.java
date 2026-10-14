@@ -19,6 +19,7 @@ public final class DashClient implements ClientModInitializer {
     public static final List<Module> MODULES = new ArrayList<>();
     public static KeyMapping MENU_KEY;
     public static KeyMapping ZOOM_KEY;
+    private boolean configLoaded;
 
     public static boolean isEnabled(String name) {
         for (Module m : MODULES) {
@@ -74,9 +75,16 @@ public final class DashClient implements ClientModInitializer {
         AdvancedHudPack.register(MODULES);
         CombatVisualPack.register(MODULES);
         HudLayout.load();
-        Config.load();
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            // Minecraft.Options is null during ClientModInitializer startup.
+            // Apply saved module states after the first completed client tick,
+            // when graphics settings are initialized (Performance Boost and
+            // Extended View both access those options in onEnable()).
+            if (!configLoaded && client.options != null) {
+                Config.load();
+                configLoaded = true;
+            }
             AdvancedHudPack.sample(client);
             while (MENU_KEY.consumeClick()) {
                 if (client.gui.screen() == null) client.gui.setScreen(new DashScreen());
