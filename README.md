@@ -1,6 +1,7 @@
 # DashClient
 
-A client-side Fabric module collection for **Minecraft 26.2 and 26.3**, Java 25.
+A client-side Fabric module collection for **Minecraft 1.21.11 and all stable releases through 26.3**.
+The 1.21.11 build targets Java 21; 26.x builds target Java 25.
 Built with GitHub Actions. Compatible with other optimization mods because
 DashClient does not inject into chunk rendering, world renderers, lighting,
 Sodium, Entity Culling or other mods.
@@ -94,17 +95,24 @@ release and remain at approximately the same location when resizing the window.
 **Reset Positions** restores the default layout.
 Only enabled modules with visible text are draggable.
 
-### Download: choose your Minecraft version
-- **Minecraft 26.2**: [DashClient JAR for 26.2](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/dashclient-1.0.0-mc26.2.jar) or [phone ZIP for 26.2](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/DashClient-Phone-Download-mc26.2.zip).
-- **Minecraft 26.3**: [DashClient JAR for 26.3](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/dashclient-1.0.0-mc26.3.jar) or [phone ZIP for 26.3](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/DashClient-Phone-Download-mc26.3.zip).
+### Download: select your exact Minecraft version
+The [DashClient GitHub release](https://github.com/giovannipetrccelli5-gif/DashClient/releases/tag/dev-build) includes **separate, version-matched JARs and phone ZIPs** for:
 
-Older [JAR](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/dashclient-1.0.0.jar)
-and [phone ZIP](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/DashClient-Phone-Download.zip)
-links remain usable and refer to **26.3**. Install exactly one DashClient JAR
-matching your Minecraft version in your Fabric `mods` folder.
-The GitHub Actions workflow compiles and tests against both Minecraft versions,
-checks each JAR's version-specific Fabric metadata, and publishes both downloads.
-Gameplay on Android/PojavLauncher still requires runtime verification.
+| Minecraft | JAR | Android-friendly ZIP |
+|---|---|---|
+| 1.21.11 | [JAR](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/dashclient-1.0.0-mc1.21.11.jar) | [ZIP](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/DashClient-Phone-Download-mc1.21.11.zip) |
+| 26.1 | [JAR](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/dashclient-1.0.0-mc26.1.jar) | [ZIP](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/DashClient-Phone-Download-mc26.1.zip) |
+| 26.1.1 | [JAR](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/dashclient-1.0.0-mc26.1.1.jar) | [ZIP](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/DashClient-Phone-Download-mc26.1.1.zip) |
+| 26.1.2 | [JAR](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/dashclient-1.0.0-mc26.1.2.jar) | [ZIP](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/DashClient-Phone-Download-mc26.1.2.zip) |
+| 26.2 | [JAR](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/dashclient-1.0.0-mc26.2.jar) | [ZIP](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/DashClient-Phone-Download-mc26.2.zip) |
+| 26.3 | [JAR](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/dashclient-1.0.0-mc26.3.jar) | [ZIP](https://github.com/giovannipetrccelli5-gif/DashClient/releases/download/dev-build/DashClient-Phone-Download-mc26.3.zip) |
+
+Legacy `dashclient-1.0.0.jar` and `DashClient-Phone-Download.zip` download links still point to **26.3**.
+Only put **one DashClient JAR** into your Fabric `mods` folder; the JAR's
+Minecraft dependency must match your game. Different Minecraft versions
+may require code compatibility adjustments. GitHub Actions compiles each
+version separately and will not publish an unverified build.
+Android gameplay requires separate runtime testing.
 
 ### Experimental Combat & Visual modules (19)
 - **Auto Clicker**: up to four attempts/second at a crosshair-selected
