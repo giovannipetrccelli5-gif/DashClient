@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,14 +21,30 @@ public final class ExpandedModulePack {
     private static final Map<Item,Integer> COUNTS = new HashMap<>();
     private static Object lastPlayer;
     private static int inventoryAge;
+    private static final List<Module> ACTIVE_COUNTERS = new ArrayList<>();
+    private static boolean wereCountersEnabled;
 
     public static void tick(Minecraft c) {
         if (c.player == null) {
             COUNTS.clear();
             lastPlayer = null;
             inventoryAge = 0;
+            wereCountersEnabled = false;
             return;
         }
+        boolean enabled = false;
+        for (Module m : ACTIVE_COUNTERS) {
+            if (m.enabled()) { enabled = true; break; }
+        }
+        if (!enabled) {
+            if (wereCountersEnabled) COUNTS.clear();
+            wereCountersEnabled = false;
+            lastPlayer = null;
+            inventoryAge = 0;
+            return;
+        }
+        if (!wereCountersEnabled) inventoryAge = 10;
+        wereCountersEnabled = true;
         if (lastPlayer == c.player && ++inventoryAge < 10) return;
         lastPlayer = c.player;
         inventoryAge = 0;
@@ -38,19 +55,22 @@ public final class ExpandedModulePack {
             if (!stack.isEmpty()) COUNTS.merge(stack.getItem(), stack.getCount(), Integer::sum);
         }
     }
-    private static void add(List<Module> list, String name, Function<Minecraft,String> readout) {
-        list.add(new Module(name) {
+    private static Module add(List<Module> list, String name, Function<Minecraft,String> readout) {
+        Module m = new Module(name) {
             @Override public String hudText(Minecraft c) { return readout.apply(c); }
-        });
+        };
+        list.add(m);
+        return m;
     }
     private static void item(List<Module> list, String name, Item item) {
-        add(list, "Count: " + name, c -> c.player == null ? null :
-            name + ": " + COUNTS.getOrDefault(item, 0));
+        ACTIVE_COUNTERS.add(add(list, "Count: " + name, c -> c.player == null ? null :
+            name + ": " + COUNTS.getOrDefault(item, 0)));
     }
     private static String fmt(double d) {
         return String.format(Locale.ROOT, "%.1f", d);
     }
     public static void register(List<Module> list) {
+        ACTIVE_COUNTERS.clear();
         // Opt-in HUD workload controls. Eco refresh saves CPU; minimal renders
         // only the first 8 enabled readouts; fast refresh increases freshness.
         list.add(new Module("HUD Eco Refresh") {});

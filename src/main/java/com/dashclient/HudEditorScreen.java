@@ -24,6 +24,7 @@ public final class HudEditorScreen extends Screen {
     private Module selected;
     private boolean dragMoved;
     private boolean toolbarTop;
+    private long nextPreviewRefreshNanos;
     private int dragOffsetX, dragOffsetY, dragStartX, dragStartY;
 
     public HudEditorScreen() { super(Component.literal("DashClient HUD Editor")); }
@@ -53,7 +54,7 @@ public final class HudEditorScreen extends Screen {
         firstButton(Button.builder(Component.literal("Reset"), b -> {
             HudLayout.reset();
             dragging = selected = null;
-            updatePreviews();
+            updatePreviews(true);
         }).bounds(pad + 2 * (btnW + gap), row1, btnW, 22).build());
         firstButton(Button.builder(Component.literal("Back"), b -> {
             HudLayout.save();
@@ -80,7 +81,15 @@ public final class HudEditorScreen extends Screen {
         for (Button button : secondRow) button.setY(y2);
     }
 
-    private void updatePreviews() {
+    private void updatePreviews() { updatePreviews(false); }
+
+    private void updatePreviews(boolean immediate) {
+        // Normal rendering may run 60+ times/sec on mobile. Most readouts
+        // include string formatting and some query nearby entities. Only
+        // resample previews 4x/sec or immediately after a layout change.
+        long now = System.nanoTime();
+        if (!immediate && now < nextPreviewRefreshNanos) return;
+        nextPreviewRefreshNanos = now + 250_000_000L;
         previews.clear();
         Minecraft client = Minecraft.getInstance();
         int ordinal = 0;
@@ -161,7 +170,7 @@ public final class HudEditorScreen extends Screen {
         if (preview == null) return;
         HudLayout.move(selected, x, y, width, height, preview.width, preview.height);
         if (save) HudLayout.save();
-        updatePreviews();
+        updatePreviews(true);
     }
 
     private void nudge(int dx, int dy) {
