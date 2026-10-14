@@ -37,9 +37,9 @@ public final class HudLayout {
             int rows = Math.max(1, (screenH - 14) / lineHeight);
             int column = visibleIndex / rows;
             int row = visibleIndex % rows;
-            x = right ? screenW - 8 - textW - column * (cellWidth + 4)
-                : 8 + column * (cellWidth + 4);
-            y = 6 + row * lineHeight;
+            x = right ? screenW - 25 - textW - column * (cellWidth + 4)
+                : 25 + column * (cellWidth + 4);
+            y = 18 + row * lineHeight;
             if (x + textW + 4 > screenW || x < 0) return null;
         }
         return new Point(clamp(x, 4, Math.max(4, screenW - textW - 4)),
