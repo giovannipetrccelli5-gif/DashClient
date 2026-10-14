@@ -30,7 +30,7 @@ jobs:
           set -euo pipefail
           mkdir -p dist
           # Oldest API first; test each against its own Minecraft remapped JAR.
-          for mc in 26.1.2 26.1.1 26.1 1.21.11 26.2 26.3; do
+          for mc in 1.21.11 26.1 26.1.1 26.1.2 26.2 26.3; do
             case "$mc" in
               1.21.11) api='0.141.6+1.21.11' ;;
               26.1) api='0.145.1+26.1' ;;
