@@ -166,7 +166,7 @@ public final class CombatVisualPack {
             // off so it won't immediately override the render distance.
             for (Module m : DashClient.MODULES) {
                 if (m.enabled() && (m.name().equals("Performance Boost") ||
-                    m.name().equals("Extreme FPS"))) m.setEnabled(false);
+                    m.name().equals("Extreme FPS") || m.name().equals("Battery Saver"))) m.setEnabled(false);
             }
             // Raise local view settings; server view distance is NOT bypassed.
             c.options.renderDistance().set(Math.max(previous, Math.min(32, 24)));
