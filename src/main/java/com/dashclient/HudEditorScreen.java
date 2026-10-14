@@ -121,13 +121,17 @@ public final class HudEditorScreen extends Screen {
     }
 
     private void placeSelected(int x, int y) {
+        placeSelected(x, y, true);
+    }
+
+    private void placeSelected(int x, int y, boolean persist) {
         if (selected == null) return;
         updatePreviews();
         Preview preview = selectedPreview();
         if (preview == null) return;
         int safeY = Math.min(y, Math.max(30, height - 92));
         HudLayout.move(selected, x, safeY, width, height, preview.width);
-        HudLayout.save();
+        if (persist) HudLayout.save();
         updatePreviews();
     }
 
@@ -149,7 +153,7 @@ public final class HudEditorScreen extends Screen {
             Preview p = previews.get(i);
             // Include the big drag handle, not only the tiny font pixels.
             if (event.x() >= p.x - 10 && event.x() <= p.x + p.width + 36
-                    && event.y() >= p.y - 6 && event.y() <= p.y + 15) {
+                    && event.y() >= p.y - 4 && event.y() <= p.y + 11) {
                 selected = p.module;
                 dragging = p.module;
                 dragMoved = false;
@@ -177,7 +181,7 @@ public final class HudEditorScreen extends Screen {
             if (travel > 4 || dragMoved) {
                 dragMoved = true;
                 placeSelected((int)event.x() - dragOffsetX,
-                    (int)event.y() - dragOffsetY);
+                    (int)event.y() - dragOffsetY, false);
             }
             return true;
         }
@@ -193,6 +197,7 @@ public final class HudEditorScreen extends Screen {
             if (travel > 4 || dragMoved)
                 placeSelected((int)event.x() - dragOffsetX,
                     (int)event.y() - dragOffsetY);
+            HudLayout.save();
             dragging = null;
             dragMoved = false;
             return true;
