@@ -111,14 +111,28 @@ public final class DashScreen extends Screen {
         top = panelY + 67;
 
         int tabY = panelY + 44;
+        // Fit all navigation tabs above the bottom toolbar even at Pojav GUI scales.
+        int tabSpacing = Math.max(18, Math.min(25, (panelH - 90) / TABS.length));
         for (int i = 0; i < TABS.length; i++) {
             final int selected = i;
-            String name = (i == selectedTab ? "> " : "  ") + TABS[i];
+            String symbol = switch (TABS[i]) {
+                case "FPS" -> "⚡ ";
+                case "Combat" -> "⚔ ";
+                case "Visuals" -> "✧ ";
+                case "HUD" -> "◈ ";
+                case "Survival" -> "♥ ";
+                case "World" -> "⌖ ";
+                case "Movement" -> "➤ ";
+                default -> "";
+            };
+            String name = (i == selectedTab ? "› " : "  ")
+                + (sideW > 85 ? symbol : "") + TABS[i];
             addRenderableWidget(Button.builder(Component.literal(name), b -> {
                 selectedTab = selected;
                 page = 0;
                 rebuildWidgets();
-            }).bounds(panelX + 6, tabY + i * 25, sideW - 7, 22).build());
+            }).bounds(panelX + 6, tabY + i * tabSpacing,
+                sideW - 7, Math.min(22, tabSpacing - 1)).build());
         }
 
         searchBox = new EditBox(font, contentX, panelY + 38,
@@ -267,8 +281,19 @@ public final class DashScreen extends Screen {
         g.fill(panelX - 1, panelY - 1, panelX + panelW + 1, panelY + panelH + 1, 0xFF32729F);
         g.fill(panelX, panelY, panelX + panelW, panelY + panelH, 0xF00D1426);
         g.fill(panelX + 3, panelY + 3, panelX + panelW - 3, panelY + 31, 0xFF142D44);
+        g.fill(panelX + 3, panelY + 30, panelX + panelW - 3, panelY + 32, 0xFF30749E);
         g.fill(contentX - 5, panelY + 34, contentX - 3, panelY + panelH - 35, 0xFF32729F);
         super.extractRenderState(g, mouseX, mouseY, delta);
+        // Clear enabled/disabled accent rails make scanning a large module list easy.
+        for (Tile tile : tiles) {
+            int accent = tile.module.enabled() ? 0xFF5DD9AB : 0xFF47556B;
+            g.fill(tile.x + 1, tile.y + 3, tile.x + 3,
+                tile.y + tile.height - 3, accent);
+        }
+        int navSpacing = Math.max(18, Math.min(25, (panelH - 90) / TABS.length));
+        g.fill(panelX + 5, panelY + 44 + selectedTab * navSpacing,
+            panelX + 8, panelY + 44 + selectedTab * navSpacing +
+            Math.min(22, navSpacing - 1), 0xFF77E2FF);
         g.text(font, "DASHCLIENT", panelX + 12, panelY + 12, 0xFF79DFFF, true);
         g.text(font, DashClient.MODULES.size() + " Modules | " + enabledCount + " Enabled",
             panelX + Math.min(115, panelW / 3), panelY + 12, 0xFFEAF6FF, true);
