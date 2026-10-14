@@ -86,6 +86,7 @@ public final class DashClient implements ClientModInitializer {
         ClientAssistPack.register(MODULES);
         MODULES.add(new PerformanceModule("Battery Saver", true, true));
         ExpandedModulePack.register(MODULES);
+        DeviceHealthPack.register(MODULES);
         ModuleOrder.load(MODULES);
         HudLayout.load();
 

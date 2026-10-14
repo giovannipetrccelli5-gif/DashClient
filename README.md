@@ -62,3 +62,16 @@ and unit tests run in GitHub Actions; gameplay should be tested separately.
 - Nearby player/mob radar, nearest mob/player, entity velocity/coordinates,
   target health and attack cooldown, fall/water/lava state.
 - **Combat and Visuals** categories in the Right Shift dashboard.
+
+
+## DashClient File Manager (Fabric client / PojavLauncher)
+
+Open **Right Shift → FILES** in DashClient.
+
+1. In your Android file manager, find the Minecraft game directory used by PojavLauncher.
+2. Copy downloaded **Fabric client mod .jar** files or **Minecraft resource pack .zip** files into its **dashclient-imports** subfolder. Open the FILES panel and press **Refresh** if necessary.
+3. Check the file name and choose **Install Mod** or **Install Pack**. Fabric JARs copy to `mods/` and require a game restart. Resource pack ZIPs copy to `resourcepacks/` and must be enabled from Minecraft's Resource Packs settings.
+
+Only JARs containing `fabric.mod.json` and ZIPs containing `pack.mcmeta` are accepted. Existing files are not overwritten. Mods execute code after restart; only install downloads you trust. The panel does not install server plugins: Paper/Purpur/Spigot plugin JARs must be installed on the server by its administrator. Mobile touch drag-and-drop depends on the launcher's OS integration; the file-manager inbox works without it.
+
+**Performance:** Enabled modules are not all free. The HUD cache throttles informational readouts, and idle inventory scans are skipped. Real FPS and RAM improvements vary with renderer, device, world, and enabled mods.

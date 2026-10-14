@@ -54,6 +54,12 @@ public final class DashScreen extends Screen {
     }
 
     private String category(Module m, int index) {
+        if (m.name().startsWith("JVM ") || m.name().startsWith("FPS Drop")
+                || m.name().equals("Active Optimization Profile")
+                || m.name().equals("HUD Update Period")
+                || m.name().equals("Network Latency Warning")) return "FPS";
+        if (m.name().contains("Durability Warning") || m.name().equals("Totem Backup Warning")
+                || m.name().equals("Low Air Warning")) return "Survival";
         if (m.name().equals("Battery Saver") || m.name().startsWith("HUD Eco") ||
             m.name().startsWith("HUD Fast") || m.name().startsWith("HUD Minimal"))
             return "FPS";
@@ -266,7 +272,7 @@ public final class DashScreen extends Screen {
         g.text(font, "DASHCLIENT", panelX + 12, panelY + 12, 0xFF79DFFF, true);
         g.text(font, DashClient.MODULES.size() + " Modules | " + enabledCount + " Enabled",
             panelX + Math.min(115, panelW / 3), panelY + 12, 0xFFEAF6FF, true);
-        g.text(font, "v2.0", panelX + panelW - 104, panelY + 12, 0xFFA4BCD3, true);
+        g.text(font, "v2.1", panelX + panelW - 104, panelY + 12, 0xFFA4BCD3, true);
         if (arrangeMode) {
             for (Tile tile : tiles) if (tile.module == selectedModule) {
                 g.fill(tile.x - 2, tile.y - 2, tile.x + tile.width + 2, tile.y, 0xFF77E2FF);
