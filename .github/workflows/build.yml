@@ -45,7 +45,7 @@ jobs:
                            'CombatVisualPack', 'AutoTotemModule',
                            'AutoElytraModule', 'ElytraFinderModule',
                            'ExpandedModulePack', 'AutoClickerModule',
-                           'DeviceHealthPack'):
+                           'DeviceHealthPack', 'UtilityModulePack'):
                   assert f'com/dashclient/modules/{name}.class' in jar.namelist()
               for name in ('ClientFileInbox', 'ClientImportsScreen', 'DashScreen'):
                   assert f'com/dashclient/{name}.class' in jar.namelist()

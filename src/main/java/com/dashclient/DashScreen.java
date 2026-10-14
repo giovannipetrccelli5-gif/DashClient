@@ -57,6 +57,11 @@ public final class DashScreen extends Screen {
     }
 
     private String category(Module m, int index) {
+        if (m.name().startsWith("Gear:")) return "Survival";
+        if (m.name().startsWith("PvP:")) return "Combat";
+        if (m.name().startsWith("Flight:")) return "Movement";
+        if (m.name().startsWith("Session:")) return "HUD";
+        if (m.name().startsWith("Perf:")) return "FPS";
         if (m.name().equals("Auto Clicker") || m.name().equals("Kill Aura")
             || m.name().equals("TriggerBot")) return "Combat";
         if (m.name().equals("Auto Sneak") || m.name().equals("Auto Use"))

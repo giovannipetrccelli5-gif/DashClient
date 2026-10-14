@@ -100,7 +100,7 @@ public final class ClientFileInbox {
     }
 
     private static boolean validName(String name) {
-        return name != null && name.matches("[A-Za-z0-9 _+.()\\\\-]{1,120}")
+        return name != null && name.matches("[A-Za-z0-9 _+.()-]{1,120}")
             && !name.equals(".") && !name.equals("..");
     }
 

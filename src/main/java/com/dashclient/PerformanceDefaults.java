@@ -19,15 +19,14 @@ public final class PerformanceDefaults {
         boolean battery = Boolean.parseBoolean(settings.getProperty("battery_saver"));
         boolean extendedView = Boolean.parseBoolean(settings.getProperty("extended_view"));
 
-        // Do not override an existing, deliberately selected graphics preset.
-        // An active Extended View setting likewise takes precedence.
-        if (!extreme && !battery && !extendedView)
-            settings.setProperty("performance_boost", "true");
-        if (!extendedView)
-            settings.setProperty("adaptive_fps", "true");
+        // One active profile only: avoid forcing Performance Boost when an
+        // existing Extreme FPS, Battery Saver, or Extended View choice exists.
+        settings.setProperty("performance_boost",
+            Boolean.toString(!extreme && !battery && !extendedView));
+        settings.setProperty("adaptive_fps", Boolean.toString(!extendedView));
 
-        // Only HUD refresh is throttled; this does not throttle game ticks.
-        settings.setProperty("hud_eco_refresh", "true");
+        // Respect any previous HUD-refresh selection while upgrading.
+        settings.putIfAbsent("hud_eco_refresh", "true");
 
         settings.setProperty(MARKER, "1");
         return true;

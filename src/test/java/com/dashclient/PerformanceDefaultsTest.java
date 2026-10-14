@@ -27,19 +27,19 @@ class PerformanceDefaultsTest {
         Properties extreme = new Properties();
         extreme.setProperty("extreme_fps", "true");
         assertTrue(PerformanceDefaults.apply(extreme));
-        assertNull(extreme.getProperty("performance_boost"));
+        assertEquals("false", extreme.getProperty("performance_boost"));
 
         Properties battery = new Properties();
         battery.setProperty("battery_saver", "true");
         assertTrue(PerformanceDefaults.apply(battery));
-        assertNull(battery.getProperty("performance_boost"));
+        assertEquals("false", battery.getProperty("performance_boost"));
     }
 
     @Test void doesNotFightUserExtendedView() {
         Properties p = new Properties();
         p.setProperty("extended_view", "true");
         PerformanceDefaults.apply(p);
-        assertNull(p.getProperty("performance_boost"));
-        assertNull(p.getProperty("adaptive_fps"));
+        assertEquals("false", p.getProperty("performance_boost"));
+        assertEquals("false", p.getProperty("adaptive_fps"));
     }
 }
