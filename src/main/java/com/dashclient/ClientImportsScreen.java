@@ -72,6 +72,25 @@ public final class ClientImportsScreen extends Screen {
             (page + 1) * PER_PAGE < files.size();
     }
 
+    /** Desktop/Pojav installations that forward OS file drops can drop here. */
+    @Override public void onFilesDrop(List<java.nio.file.Path> paths) {
+        int imported = 0;
+        String lastError = "";
+        for (java.nio.file.Path path : paths) {
+            ClientFileInbox.Result staged = ClientFileInbox.stageDropped(path);
+            if (!staged.success()) { lastError = staged.message(); continue; }
+            ClientFileInbox.Result installed = ClientFileInbox.install(
+                path.getFileName().toString());
+            if (installed.success()) imported++;
+            else lastError = installed.message();
+        }
+        message = imported > 0
+            ? imported + " file(s) installed. Restart for mods; enable packs in settings."
+            : lastError.isEmpty() ? "Nothing to import" : lastError;
+        files = ClientFileInbox.scan();
+        rebuildButtons();
+    }
+
     @Override public void extractRenderState(GuiGraphicsExtractor g,
                                             int mouseX, int mouseY, float partialTick) {
         g.fill(0, 0, width, height, 0xCC080E1D);
