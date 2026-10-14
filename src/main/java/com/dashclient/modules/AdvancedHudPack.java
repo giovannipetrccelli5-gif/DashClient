@@ -109,7 +109,7 @@ public final class AdvancedHudPack {
         add(list, "Player Username", c -> c.player == null ? null :
             "IGN: " + c.player.getName().getString());
         add(list, "Held Item Type", c -> c.player == null ? null :
-            "Holding: " + c.player.getMainHandItem().getItem().getName().getString());
+            "Holding: " + c.player.getMainHandItem().getHoverName().getString());
         add(list, "Offhand Durability", c -> c.player == null ? null :
             "Offhand durability: " + durability(c.player.getOffhandItem()));
         add(list, "Helmet Durability", c -> armor(c, "Helmet durability", EquipmentSlot.HEAD));
