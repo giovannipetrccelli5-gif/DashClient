@@ -27,6 +27,35 @@ jobs:
           gradle-version: current
       - name: Build and run tests
         run: gradle build --no-daemon
+      - name: Audit module names and config keys
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, collections
+          roots=Path('src/main/java/com/dashclient/modules')
+          patterns=[
+              r'\\bsuper\\("([^"]+)"\\)',
+              r'\\b(?:add|style|item)\\(list,\\s*"([^"]+)"',
+              r'\\b(?:add|hud)\\(modules,\\s*"([^"]+)"',
+              r'\\binfo\\(out,\\s*"([^"]+)"',
+              r'\\bnew Module\\("([^"]+)"',
+          ]
+          names=[]
+          for file in roots.glob('*.java'):
+              src=file.read_text(encoding='utf-8')
+              for pattern in patterns:
+                  for name in re.findall(pattern, src):
+                      key=name.lower().replace(' ', '_').replace('/', '_')
+                      names.append((key,name,file.name))
+          grouped=collections.defaultdict(list)
+          for key,name,file in names:
+              grouped[key].append((name,file))
+          collisions={key:values for key,values in grouped.items() if len(values)>1}
+          assert len(names)>=250, f'Audit extracted too few module names: {len(names)}'
+          assert not collisions, f'Duplicate module preference keys: {collisions}'
+          assert all(0<len(name)<=120 for _,name,_ in names)
+          print(f'Audited {len(names)} module identifiers: no duplicate preference keys')
+          PY
       - name: Validate built JAR
         run: |
           python3 - <<'PY'
