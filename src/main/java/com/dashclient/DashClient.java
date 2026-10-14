@@ -68,6 +68,7 @@ public final class DashClient implements ClientModInitializer {
         MODULES.add(new ExtraHudModules.BlockInfo());
         // HUD, PvP information, navigation and visual customization.
         InventoryPack.register(MODULES);
+        MODULES.add(new AutoTotemModule());
         WorldPack.register(MODULES);
         StatusPack.register(MODULES);
         MODULES.add(new PerformanceModule("Extreme FPS", true));

@@ -51,6 +51,7 @@ public final class DashScreen extends Screen {
     }
 
     private String category(Module m, int index) {
+        if (m.name().equals("Auto Totem")) return "Survival";
         if (isFps(m)) return "FPS";
         if (index >= 124) {
             String name = m.name();
