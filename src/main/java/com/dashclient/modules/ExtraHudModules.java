@@ -149,13 +149,11 @@ public final class ExtraHudModules {
     }
 
     public static final class WorldTime extends Module {
-        public WorldTime() { super("World Time"); }
+        public WorldTime() { super("World Age"); }
         @Override public String hudText(Minecraft c) {
             if (c.level == null) return null;
-            long ticks = c.level.getDayTime() % 24000L;
-            long hour = ((ticks / 1000L) + 6L) % 24L;
-            long minute = (ticks % 1000L) * 60L / 1000L;
-            return String.format(Locale.ROOT, "World time: %02d:%02d", hour, minute);
+            long ticks = c.level.getLevelData().getGameTime();
+            return "World age: " + ticks + " ticks";
         }
     }
 
