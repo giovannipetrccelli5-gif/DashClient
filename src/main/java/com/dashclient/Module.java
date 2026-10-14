@@ -17,9 +17,25 @@ public abstract class Module {
     public final void setEnabled(boolean value) {
         if (enabled == value) return;
         enabled = value;
-        if (value) onEnable();
-        else onDisable();
-        HudFrameCache.invalidate();
+        try {
+            if (value) onEnable();
+            else onDisable();
+        } catch (RuntimeException failure) {
+            DashClient.LOGGER.error("Module {} failed to {}",
+                name, value ? "enable" : "disable", failure);
+            if (value) {
+                // Prevent a broken toggle from repeatedly crashing on startup.
+                enabled = false;
+                try {
+                    onDisable();
+                } catch (RuntimeException cleanupFailure) {
+                    DashClient.LOGGER.error("Cleanup failed for module {}", name,
+                        cleanupFailure);
+                }
+            }
+        } finally {
+            HudFrameCache.invalidate();
+        }
     }
 
     public void onEnable() {}

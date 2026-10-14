@@ -25,4 +25,25 @@ final class ModuleTest {
         assertFalse(m.enabled());
         assertEquals(1, m.disabledCalls);
     }
+    @Test void failedModuleEnablesDoNotRemainActive() {
+        Module broken = new Module("Broken Test Module") {
+            @Override public void onEnable() {
+                throw new IllegalStateException("Simulated broken module");
+            }
+        };
+        assertDoesNotThrow(() -> broken.setEnabled(true));
+        assertFalse(broken.enabled());
+    }
+
+    @Test void failedModuleDisablesStillLeaveItOff() {
+        Module broken = new Module("Broken Disable") {
+            @Override public void onDisable() {
+                throw new IllegalStateException("Simulated failed cleanup");
+            }
+        };
+        broken.setEnabled(true);
+        assertDoesNotThrow(() -> broken.setEnabled(false));
+        assertFalse(broken.enabled());
+    }
+
 }
