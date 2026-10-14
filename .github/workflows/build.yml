@@ -73,7 +73,7 @@ jobs:
                            'AdaptiveFpsModule', 'AdaptiveDistancePolicy',
                            'CombatVisualPack', 'AutoTotemModule',
                            'AutoElytraModule', 'ElytraFinderModule',
-                           'ExpandedModulePack', 'AutoClickerModule',
+                           'ExpandedModulePack', 'AutoClickerModule', 'OreXrayModule',
                            'DeviceHealthPack', 'UtilityModulePack',
                            'QualityOfLifePack'):
                   assert f'com/dashclient/modules/{name}.class' in jar.namelist()

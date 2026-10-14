@@ -4,5 +4,6 @@
   "key.dashclient.zoom": "DashClient Zoom",
   "key.dashclient.edit_hud": "Edit DashClient HUD",
   "key.dashclient.clean_hud": "Toggle DashClient Clean Screenshot HUD",
-  "key.dashclient.auto_clicker": "Toggle DashClient Auto Clicker"
+  "key.dashclient.auto_clicker": "Toggle DashClient Auto Clicker",
+  "key.dashclient.xray": "Toggle DashClient X-Ray"
 }

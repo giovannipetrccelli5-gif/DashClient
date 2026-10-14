@@ -16,6 +16,7 @@ public final class ModuleHelp {
             case "HUD Eco Refresh" -> "Refreshes HUD text once per second instead of every frame";
             case "HUD Fast Refresh" -> "Samples enabled HUD readouts every game tick";
             case "Auto Clicker" -> "K to toggle | 10 CPS native vanilla attack input";
+            case "X-Ray" -> "X to toggle | Highlights ores through walls in loaded chunks (20-block radius)";
             case "Module List HUD" -> "Draggable list of up to twelve active modules";
             case "Clean Screenshot HUD" -> "Hides DashClient overlays while enabled";
             case "Streamer Privacy HUD" -> "Hides common names, coords and server readouts";
