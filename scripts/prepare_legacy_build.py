@@ -66,6 +66,8 @@ def main():
              "net.minecraft.world.inventory.ClickType"),
             ("ContainerInput.", "ClickType."),
             ("camera.getFov()", "client.options.fov().get()"),
+            ("graphics.outline(", "graphics.renderOutline("),
+            (".handleContainerInput(", ".handleInventoryMouseClick("),
         )
         adapted = 0
         for file in root.rglob("*.java"):
@@ -73,6 +75,9 @@ def main():
             changed = source
             for before, after in replaces:
                 changed = changed.replace(before, after)
+            # Only GUI rendering's text() changed; HudFrameCache.Line.text()
+            # remains a record accessor, not a graphics method.
+            changed = changed.replace("line.drawString()", "line.text()")
             if changed != source:
                 file.write_text(changed, encoding="utf-8")
                 adapted += 1
