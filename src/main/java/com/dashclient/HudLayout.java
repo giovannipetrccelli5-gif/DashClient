@@ -89,11 +89,15 @@ public final class HudLayout {
             for (String key : props.stringPropertyNames()) {
                 String[] xy = props.getProperty(key).split(",", 2);
                 if (xy.length != 2) continue;
-                double x = Double.parseDouble(xy[0]);
-                double y = Double.parseDouble(xy[1]);
-                if (Double.isFinite(x) && Double.isFinite(y)
-                        && x >= 0 && x <= 1 && y >= 0 && y <= 1)
-                    CUSTOM.put(key, new Normalized(x,y));
+                try {
+                    double x = Double.parseDouble(xy[0]);
+                    double y = Double.parseDouble(xy[1]);
+                    if (Double.isFinite(x) && Double.isFinite(y)
+                            && x >= 0 && x <= 1 && y >= 0 && y <= 1)
+                        CUSTOM.put(key, new Normalized(x,y));
+                } catch (NumberFormatException ignored) {
+                    // A corrupt entry must not discard every saved HUD position.
+                }
             }
         } catch (Exception e) {
             DashClient.LOGGER.warn("Could not read saved HUD layout", e);

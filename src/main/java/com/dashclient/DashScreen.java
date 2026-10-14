@@ -58,6 +58,10 @@ public final class DashScreen extends Screen {
     }
 
     private String category(Module m, int index) {
+        if (m.name().equals("Clean Screenshot HUD")
+            || m.name().equals("Streamer Privacy HUD")
+            || m.name().equals("Module List HUD")) return "Visuals";
+        if (m.name().startsWith("Info:")) return "HUD";
         if (m.name().startsWith("Gear:")) return "Survival";
         if (m.name().startsWith("PvP:")) return "Combat";
         if (m.name().startsWith("Flight:")) return "Movement";
@@ -165,23 +169,31 @@ public final class DashScreen extends Screen {
         });
         addRenderableWidget(searchBox);
         int headerRight = panelX + panelW - 7;
+        int headerSize = panelW < 400 ? 31 : 42;
+        int filesW = panelW < 400 ? 40 : 54;
+        int settingsW = panelW < 400 ? 35 : 50;
+        int favoritesX = headerRight - filesW - 3 - headerSize;
+        int enabledX = favoritesX - 3 - headerSize;
         addRenderableWidget(Button.builder(Component.literal("FILES"), b ->
             minecraft.gui.setScreen(new ClientImportsScreen()))
-            .bounds(headerRight - 54, panelY + 6, 54, 21).build());
+            .bounds(headerRight - filesW, panelY + 6, filesW, 21).build());
+        addRenderableWidget(Button.builder(Component.literal("SET"), b ->
+            minecraft.gui.setScreen(new DashSettingsScreen()))
+            .bounds(enabledX - settingsW - 3, panelY + 6, settingsW, 21).build());
         favoritesFilterButton = addRenderableWidget(Button.builder(
             Component.literal("★"), b -> {
             favoritesOnly = !favoritesOnly;
             page = 0;
             refreshCards();
             updateFilterLabels();
-        }).bounds(headerRight - 100, panelY + 6, 42, 21).build());
+        }).bounds(favoritesX, panelY + 6, headerSize, 21).build());
         enabledFilterButton = addRenderableWidget(Button.builder(
             Component.literal("ON"), b -> {
             enabledOnly = !enabledOnly;
             page = 0;
             refreshCards();
             updateFilterLabels();
-        }).bounds(headerRight - 146, panelY + 6, 42, 21).build());
+        }).bounds(enabledX, panelY + 6, headerSize, 21).build());
         updateFilterLabels();
 
         refreshCards();
@@ -352,12 +364,13 @@ public final class DashScreen extends Screen {
         g.fill(panelX + 5, panelY + 44 + selectedTab * navSpacing,
             panelX + 8, panelY + 44 + selectedTab * navSpacing +
             Math.min(22, navSpacing - 1), 0xFF77E2FF);
-        g.text(font, "DASHCLIENT", panelX + 12, panelY + 12, 0xFF79DFFF, true);
-        if (panelW > 540)
+        g.text(font, panelW > 410 ? "DASHCLIENT" : "DC",
+            panelX + 12, panelY + 12, 0xFF79DFFF, true);
+        if (panelW > 590)
             g.text(font, DashClient.MODULES.size() + " Modules | " + enabledCount + " On",
                 panelX + 117, panelY + 12, 0xFFEAF6FF, true);
-        if (panelW > 340)
-            g.text(font, "v2.2", panelX + panelW - 175, panelY + 12,
+        if (panelW > 590)
+            g.text(font, "v2.3", panelX + panelW - 202, panelY + 12,
                 0xFFA4BCD3, true);
         if (arrangeMode) {
             for (Tile tile : tiles) if (tile.module == selectedModule) {

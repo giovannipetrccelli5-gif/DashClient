@@ -30,6 +30,15 @@ public final class DashClient implements ClientModInitializer {
         return false;
     }
 
+    /** Hide common identifying readouts when recording. Not a full privacy guarantee. */
+    private static boolean privateReadout(String name) {
+        String text=name.toLowerCase(java.util.Locale.ROOT);
+        return text.contains("coordinate") || text.contains("server address")
+            || text.contains("username") || text.contains("position")
+            || text.contains("chunk") || text.contains("target name")
+            || text.contains("block xyz") || text.contains("compass");
+    }
+
     @Override
     public void onInitializeClient() {
         KeyMapping.Category category = KeyMapping.Category.register(
@@ -88,6 +97,7 @@ public final class DashClient implements ClientModInitializer {
         ExpandedModulePack.register(MODULES);
         DeviceHealthPack.register(MODULES);
         UtilityModulePack.register(MODULES);
+        QualityOfLifePack.register(MODULES);
         ModuleOrder.load(MODULES);
         ModuleFavorites.load();
         HudLayout.load();
@@ -140,7 +150,8 @@ public final class DashClient implements ClientModInitializer {
         HudElementRegistry.addLast(
             Identifier.fromNamespaceAndPath("dashclient", "overlay"), (graphics, delta) -> {
                 Minecraft client = Minecraft.getInstance();
-                if (client.player == null || client.gui.screen() instanceof HudEditorScreen)
+                if (client.player == null || client.gui.screen() instanceof HudEditorScreen
+                        || isEnabled("Clean Screenshot HUD"))
                     return;
                 if (isEnabled("HUD Gameplay Only") && client.gui.screen() != null) return;
 
@@ -156,6 +167,8 @@ public final class DashClient implements ClientModInitializer {
                 // enchanted glint, durability bars and the totem count to update.
                 for (Module module : MODULES) {
                     if (!module.enabled() || !module.customHud()) continue;
+                    if (isEnabled("Streamer Privacy HUD") && privateReadout(module.name()))
+                        continue;
                     HudLayout.Point position = HudLayout.position(module, 0, sw, sh,
                         module.hudWidth(client), module.hudHeight(client), gap, right);
                     if (position != null)
@@ -164,6 +177,8 @@ public final class DashClient implements ClientModInitializer {
 
                 for (HudFrameCache.Line line : HudFrameCache.lines()) {
                     Module module = line.module();
+                    if (isEnabled("Streamer Privacy HUD") && privateReadout(module.name()))
+                        continue;
                     int tw = line.width();
                     String value = line.text();
                     HudLayout.Point pos = HudLayout.position(module, ordinal++, sw, sh,

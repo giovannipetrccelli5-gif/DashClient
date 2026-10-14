@@ -45,9 +45,11 @@ jobs:
                            'CombatVisualPack', 'AutoTotemModule',
                            'AutoElytraModule', 'ElytraFinderModule',
                            'ExpandedModulePack', 'AutoClickerModule',
-                           'DeviceHealthPack', 'UtilityModulePack'):
+                           'DeviceHealthPack', 'UtilityModulePack',
+                           'QualityOfLifePack'):
                   assert f'com/dashclient/modules/{name}.class' in jar.namelist()
-              for name in ('ClientFileInbox', 'ClientImportsScreen', 'DashScreen'):
+              for name in ('ClientFileInbox', 'ClientImportsScreen', 'DashScreen',
+                           'DashSettingsScreen', 'ModuleHelp'):
                   assert f'com/dashclient/{name}.class' in jar.namelist()
           print('JAR structure and metadata verified:', jars[0])
           PY
