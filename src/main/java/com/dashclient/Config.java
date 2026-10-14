@@ -24,16 +24,25 @@ public final class Config {
                 DashClient.LOGGER.warn("Could not read DashClient config", e);
             }
         }
+        // One-time upgrade for existing installations too. Later manual
+        // changes must remain disabled when the user turns a preset off.
+        boolean migrated = PerformanceDefaults.apply(props);
         for (Module module : DashClient.MODULES) {
             boolean defaultOn = module.name().equals("FPS Display")
-                || module.name().equals("Coordinates");
+                || module.name().equals("Coordinates")
+                || module.name().equals("Performance Boost")
+                || module.name().equals("Adaptive FPS")
+                || module.name().equals("HUD Eco Refresh");
             boolean enabled = Boolean.parseBoolean(props.getProperty(key(module), "" + defaultOn));
             module.setEnabled(enabled);
         }
+        if (migrated) save();
     }
 
     public static void save() {
         Properties props = new Properties();
+        // Persist the migration marker so explicit OFF choices survive restart.
+        props.setProperty(PerformanceDefaults.MARKER, "1");
         for (Module module : DashClient.MODULES)
             props.setProperty(key(module), Boolean.toString(module.enabled()));
         Path tmp = PATH.resolveSibling(PATH.getFileName() + ".tmp");
