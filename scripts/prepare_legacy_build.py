@@ -48,6 +48,37 @@ def main():
     if missing:
         raise SystemExit("Legacy adapter did not find required API references: " + str(missing))
     if sys.argv[1] == "1.21.11":
+        # Minecraft 1.21.11 predates the GUI extraction API introduced in 26.x.
+        # Its legacy GuiGraphics render methods have different names.
+        replaces = (
+            ("net.minecraft.client.gui.GuiGraphicsExtractor",
+             "net.minecraft.client.gui.GuiGraphics"),
+            ("GuiGraphicsExtractor", "GuiGraphics"),
+            ("extractRenderState(", "render("),
+            (".centeredText(", ".drawCenteredString("),
+            (".itemDecorations(", ".renderItemDecorations("),
+            (".item(", ".renderItem("),
+            (".text(", ".drawString("),
+            ("net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper",
+             "net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper"),
+            ("KeyMappingHelper.registerKeyMapping(", "KeyBindingHelper.registerKeyBinding("),
+            ("net.minecraft.world.inventory.ContainerInput",
+             "net.minecraft.world.inventory.ClickType"),
+            ("ContainerInput.", "ClickType."),
+            ("camera.getFov()", "client.options.fov().get()"),
+        )
+        adapted = 0
+        for file in root.rglob("*.java"):
+            source = file.read_text(encoding="utf-8")
+            changed = source
+            for before, after in replaces:
+                changed = changed.replace(before, after)
+            if changed != source:
+                file.write_text(changed, encoding="utf-8")
+                adapted += 1
+        print(f"Mapped 1.21.11 GUI/inventory APIs in {adapted} files.")
+
+    if sys.argv[1] == "1.21.11":
         # 1.21.11 was still obfuscated: Fabric API ships intermediary access
         # wideners and must be remapped with Loom's legacy plugin.
         gradle_file = Path("build.gradle")
