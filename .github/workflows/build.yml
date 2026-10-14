@@ -74,12 +74,12 @@ jobs:
                            'CombatVisualPack', 'AutoTotemModule',
                            'AutoElytraModule', 'ElytraFinderModule',
                            'ExpandedModulePack', 'AutoClickerModule', 'OreXrayModule',
-                           'VillageFinderModule', 'FreecamModule',
+                           'VillageFinderModule', 'FreecamModule', 'AutoMinerModule',
                            'DeviceHealthPack', 'UtilityModulePack',
                            'QualityOfLifePack'):
                   assert f'com/dashclient/modules/{name}.class' in jar.namelist()
               for name in ('ClientFileInbox', 'ClientImportsScreen', 'DashScreen',
-                           'DashSettingsScreen', 'ModuleHelp'):
+                           'DashSettingsScreen', 'ModuleHelp', 'AutoMinerScreen'):
                   assert f'com/dashclient/{name}.class' in jar.namelist()
               assert 'dashclient.mixins.json' in jar.namelist()
               for name in ('FreecamLookMixin', 'FreecamInteractionMixin'):

@@ -17,7 +17,7 @@ public final class ModuleSymbols {
             || n.contains("x-ray")) return "✧";
         if (n.contains("jump") || n.contains("fly") || n.contains("vertical")) return "↑";
         if (n.contains("walk") || n.contains("sprint") || n.contains("speed")) return "➤";
-        if (n.contains("village") || n.contains("compass") || n.contains("distance") || n.contains("radar")
+        if (n.contains("auto miner") || n.contains("village") || n.contains("compass") || n.contains("distance") || n.contains("radar")
             || n.contains("coordinate") || n.contains("direction")) return "⌖";
         if (n.contains("item") || n.contains("armor") || n.contains("inventory")
             || n.contains("durability") || n.contains("totem")) return "◆";

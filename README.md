@@ -31,6 +31,22 @@ FPS warnings, settings information) and survival/equipment
 readouts (armor durability by slot, saturation, player information
 and key states).
 
+### Auto Miner (nearby selected-block mining)
+- Toggle **F7** or **Right Shift → World → Auto Miner** to open the new picker.
+  It searches every item registered with Minecraft and shows its item icon;
+  only actual placeable block items can be selected as mining targets.
+- Choose a block (e.g. Stone or Diamond Ore), then press **Start Mining**.
+  The miner looks for matching blocks in a **16-block radius** of where it
+  started. It uses normal block-breaking actions, walks flat safe routes,
+  and continues mining nearby targets without holding input.
+- **F7 turns it off immediately.** It also stops mining on low health,
+  low hunger, disconnect, death or after 30 minutes. No automatic startup.
+- Does not dig tunnels through other blocks, cross lava/water, climb stairs,
+  or explore unloaded areas. Unreachable blocks are skipped. No pathfinding
+  beyond the bounded, flat area and no anti-cheat bypass.
+- Equip an appropriate tool before starting. Run only where automation is
+  permitted; some public servers disallow it.
+
 ### Freecam (client-only camera)
 - **F6** toggles Freecam, or open **Right Shift → Visuals → Freecam**.
 - Fly the camera with **W/A/S/D**, **Space** up and **Shift** down.
