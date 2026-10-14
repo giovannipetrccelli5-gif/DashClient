@@ -22,12 +22,17 @@ public final class PerformanceModule extends Module {
     private static PerformanceModule active;
     private static int savedView;
     private final boolean extreme;
+    private final boolean battery;
     private int ticks, low, high;
 
     public PerformanceModule() { this("Performance Boost", false); }
     public PerformanceModule(String name, boolean extreme) {
+        this(name, extreme, false);
+    }
+    public PerformanceModule(String name, boolean extreme, boolean battery) {
         super(name);
         this.extreme = extreme;
+        this.battery = battery;
     }
 
     @Override public void onEnable() {
@@ -49,6 +54,11 @@ public final class PerformanceModule extends Module {
         ticks = low = high = 0;
         o.renderDistance().set(Math.min(o.renderDistance().get(), extreme ? 4 : 6));
         o.simulationDistance().set(Math.min(o.simulationDistance().get(), extreme ? 4 : 5));
+        // Reducing distant entity rendering can lower mobile GPU/CPU load.
+        o.entityDistanceScaling().set(Math.min(o.entityDistanceScaling().get(),
+            extreme ? 0.5 : 0.75));
+        // Lower FPS caps reduce power draw/heat, not peak FPS.
+        if (battery) o.framerateLimit().set(Math.min(o.framerateLimit().get(), 45));
         o.particles().set(ParticleStatus.MINIMAL);
         o.cloudStatus().set(CloudStatus.OFF);
         o.entityShadows().set(false);
@@ -98,6 +108,11 @@ public final class PerformanceModule extends Module {
             if (p.getProperty("shadows") != null)
                 o.entityShadows().set(Boolean.parseBoolean(p.getProperty("shadows")));
             o.biomeBlendRadius().set(number(p, "biome", o.biomeBlendRadius().get()));
+            if (p.getProperty("entityScale") != null)
+                o.entityDistanceScaling().set(decimal(p, "entityScale",
+                    o.entityDistanceScaling().get()));
+            if (p.getProperty("fpsCap") != null)
+                o.framerateLimit().set(number(p, "fpsCap", o.framerateLimit().get()));
             o.save();
             Files.deleteIfExists(BACKUP);
         } catch (Exception e) {
@@ -110,6 +125,11 @@ public final class PerformanceModule extends Module {
         catch (Exception e) { return fallback; }
     }
 
+    private static double decimal(Properties p, String key, double fallback) {
+        try { return Double.parseDouble(p.getProperty(key)); }
+        catch (Exception e) { return fallback; }
+    }
+
     private static Properties snapshot(Options o) {
         Properties p = new Properties();
         p.setProperty("render", "" + o.renderDistance().get());
@@ -118,6 +138,8 @@ public final class PerformanceModule extends Module {
         p.setProperty("clouds", o.cloudStatus().get().name());
         p.setProperty("shadows", "" + o.entityShadows().get());
         p.setProperty("biome", "" + o.biomeBlendRadius().get());
+        p.setProperty("entityScale", "" + o.entityDistanceScaling().get());
+        p.setProperty("fpsCap", "" + o.framerateLimit().get());
         return p;
     }
 
