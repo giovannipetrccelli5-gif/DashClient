@@ -18,6 +18,7 @@ public abstract class Module {
         enabled = value;
         if (value) onEnable();
         else onDisable();
+        HudFrameCache.invalidate();
     }
 
     public void onEnable() {}
