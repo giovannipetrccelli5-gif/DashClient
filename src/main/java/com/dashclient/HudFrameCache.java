@@ -3,6 +3,8 @@ package com.dashclient;
 import net.minecraft.client.Minecraft;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 /** Avoid calculating dozens of HUD readouts every rendered frame. */
 public final class HudFrameCache {
@@ -11,6 +13,7 @@ public final class HudFrameCache {
     private static Object world, player;
     private static int ticks;
     private static boolean dirty = true;
+    private static final Set<String> WARNED = new HashSet<>();
 
     private HudFrameCache() {}
     public static void invalidate() { dirty = true; }
@@ -42,7 +45,14 @@ public final class HudFrameCache {
         ArrayList<Line> next = new ArrayList<>();
         for (Module m : DashClient.MODULES) {
             if (!m.enabled()) continue;
-            String value = m.hudText(c);
+            String value;
+            try {
+                value = m.hudText(c);
+            } catch (RuntimeException e) {
+                if (WARNED.add(m.name()))
+                    DashClient.LOGGER.error("HUD module {} failed; skipping readout", m.name(), e);
+                continue;
+            }
             if (value == null || value.isBlank()) continue;
             value = ModuleSymbols.symbol(m) + " " + value;
             while (!value.isEmpty() && c.font.width(value) > maxWidth)

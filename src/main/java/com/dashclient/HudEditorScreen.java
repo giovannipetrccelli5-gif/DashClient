@@ -20,6 +20,7 @@ public final class HudEditorScreen extends Screen {
     private final List<Preview> previews = new ArrayList<>();
     private final List<Button> firstRow = new ArrayList<>();
     private final List<Button> secondRow = new ArrayList<>();
+    private static final java.util.Set<String> FAILED_PREVIEWS = new java.util.HashSet<>();
     private Module dragging;
     private Module selected;
     private boolean dragMoved;
@@ -106,7 +107,13 @@ public final class HudEditorScreen extends Screen {
                 elementWidth = module.hudWidth(client);
                 elementHeight = module.hudHeight(client);
             } else {
-                text = module.hudText(client);
+                try {
+                    text = module.hudText(client);
+                } catch (RuntimeException e) {
+                    if (FAILED_PREVIEWS.add(module.name()))
+                        DashClient.LOGGER.error("HUD editor preview failed for {}", module.name(), e);
+                    continue;
+                }
                 if (text == null || text.isBlank()) {
                     // Preview world-dependent readouts while on the title screen.
                     try {
@@ -132,8 +139,10 @@ public final class HudEditorScreen extends Screen {
                 elementWidth, elementHeight, custom));
         }
 
-        // If any HUD enters the lower controls, lift those controls to the top.
-        // Dragging and tap-placement are NEVER restricted by the toolbar's area.
+        repositionButtonsFromPreviews();
+    }
+
+    private void repositionButtonsFromPreviews() {
         boolean bottomOccupied = false;
         for (Preview preview : previews) {
             if (preview.y + preview.height >= height - 76) {
@@ -169,8 +178,22 @@ public final class HudEditorScreen extends Screen {
         Preview preview = selectedPreview();
         if (preview == null) return;
         HudLayout.move(selected, x, y, width, height, preview.width, preview.height);
-        if (save) HudLayout.save();
-        updatePreviews(true);
+        HudLayout.Point point = HudLayout.position(selected, 0, width, height,
+            preview.width, preview.height, 14, false);
+        if (point != null) {
+            for (int i = 0; i < previews.size(); i++) {
+                if (previews.get(i).module == selected) {
+                    previews.set(i, new Preview(selected, preview.text,
+                        point.x(), point.y(), preview.width, preview.height, preview.custom));
+                    break;
+                }
+            }
+        }
+        repositionButtonsFromPreviews();
+        if (save) {
+            HudLayout.save();
+            nextPreviewRefreshNanos = 0L;
+        }
     }
 
     private void nudge(int dx, int dy) {

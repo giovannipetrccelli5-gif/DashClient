@@ -120,7 +120,20 @@ public final class DashClient implements ClientModInitializer {
                 }
             }
             for (Module module : MODULES) {
-                if (module.enabled()) module.onTick(client);
+                if (!module.enabled()) continue;
+                try {
+                    module.onTick(client);
+                } catch (RuntimeException e) {
+                    LOGGER.error("Disabling malfunctioning module {} after tick exception",
+                        module.name(), e);
+                    try {
+                        module.setEnabled(false);
+                    } catch (RuntimeException disableFailure) {
+                        LOGGER.error("Module {} also failed while disabling",
+                            module.name(), disableFailure);
+                    }
+                    Config.save();
+                }
             }
         });
 

@@ -130,7 +130,7 @@ public final class ClientAssistPack {
             "Vertical motion: " + number(c.player.getDeltaMovement().y * 20) + " b/s");
         add(list, "Total Motion", c -> c.player == null ? null :
             "Total motion: " + number(c.player.getDeltaMovement().length() * 20) + " b/s");
-        add(list, "Sprint State", c -> c.player == null ? null :
+        add(list, "PvP Sprint State", c -> c.player == null ? null :
             "Sprinting: " + (c.player.isSprinting() ? "Yes" : "No"));
         add(list, "Crouch State", c -> c.player == null ? null :
             "Crouching: " + (c.player.isShiftKeyDown() ? "Yes" : "No"));
