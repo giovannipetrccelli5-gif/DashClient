@@ -31,6 +31,18 @@ FPS warnings, settings information) and survival/equipment
 readouts (armor durability by slot, saturation, player information
 and key states).
 
+### Village Finder (loaded-chunk detection)
+- Toggle with **V** or **Right Shift → World → Village Finder**.
+- Displays **X Y Z coordinates** on the HUD and announces newly identified
+  likely village locations on-screen.
+- Scans for **bells, beds and villagers** within 48 blocks horizontally of
+  the player, using a capped incremental search for Android performance.
+- **Likely village** means village clues were found together; **Possible
+  village** means the evidence is uncertain. If only villagers are present,
+  their position is reported without claiming a village.
+- **Limit:** Does not use the world seed or a server-side `/locate` command.
+  It cannot detect villages in unloaded, unexplored or unsent chunks.
+
 ### Ore X-Ray overlay
 - **X-Ray**: press **X** or toggle **Visuals → X-Ray** in the Right Shift menu.
   Coloured boxes mark diamond, emerald, debris, gold, iron, copper,

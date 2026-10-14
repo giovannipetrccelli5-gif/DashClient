@@ -26,6 +26,7 @@ public final class DashClient implements ClientModInitializer {
     public static KeyMapping ZOOM_KEY;
     public static KeyMapping AUTO_CLICKER_KEY;
     public static KeyMapping XRAY_KEY;
+    public static KeyMapping VILLAGE_FINDER_KEY;
     public static KeyMapping EDIT_HUD_KEY;
     public static KeyMapping CLEAN_HUD_KEY;
     private static final OreXrayModule XRAY = new OreXrayModule();
@@ -46,7 +47,8 @@ public final class DashClient implements ClientModInitializer {
         return text.contains("coordinate") || text.contains("server address")
             || text.contains("username") || text.contains("position")
             || text.contains("chunk") || text.contains("target name")
-            || text.contains("block xyz") || text.contains("compass");
+            || text.contains("block xyz") || text.contains("compass")
+            || text.contains("village");
     }
 
     @Override
@@ -66,6 +68,9 @@ public final class DashClient implements ClientModInitializer {
         XRAY_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.dashclient.xray", InputConstants.Type.KEYBOARD,
             InputConstants.KEY_X, category));
+        VILLAGE_FINDER_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+            "key.dashclient.village_finder", InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_V, category));
         EDIT_HUD_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.dashclient.edit_hud", InputConstants.Type.KEYBOARD,
             InputConstants.KEY_J, category));
@@ -105,6 +110,7 @@ public final class DashClient implements ClientModInitializer {
         MODULES.add(new AutoTotemModule());
         MODULES.add(new AutoElytraModule());
         MODULES.add(new ElytraFinderModule());
+        MODULES.add(new VillageFinderModule());
         WorldPack.register(MODULES);
         MODULES.add(XRAY);
         StatusPack.register(MODULES);
@@ -161,6 +167,16 @@ public final class DashClient implements ClientModInitializer {
                         "DashClient HUD: " + (m.enabled() ? "HIDDEN" : "VISIBLE")), true);
                     break;
                 }
+            }
+            while (VILLAGE_FINDER_KEY.consumeClick()) {
+                // V is safe to press while exploring, but not while typing.
+                if (client.gui.screen() != null || client.player == null) continue;
+                Module finder = module("Village Finder");
+                if (finder == null) continue;
+                finder.setEnabled(!finder.enabled());
+                Config.save();
+                client.gui.hud.setOverlayMessage(Component.literal(
+                    "Village Finder: " + (finder.enabled() ? "ON" : "OFF")), true);
             }
             while (XRAY_KEY.consumeClick()) {
                 // Prevent accidental toggling while typing or navigating menus.

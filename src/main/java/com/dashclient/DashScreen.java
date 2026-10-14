@@ -87,7 +87,8 @@ public final class DashScreen extends Screen {
         if (m.name().startsWith("World:")) return "World";
         if (m.name().equals("Auto Totem")) return "Survival";
         if (m.name().equals("Auto Elytra")) return "Movement";
-        if (m.name().equals("Elytra Finder")) return "World";
+        if (m.name().equals("Elytra Finder")
+                || m.name().equals("Village Finder")) return "World";
         if (m.name().equals("X-Ray")) return "Visuals";
         if (isFps(m)) return "FPS";
         if (index >= 124) {
