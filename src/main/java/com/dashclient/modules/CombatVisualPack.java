@@ -4,7 +4,6 @@ import com.dashclient.DashClient;
 import com.dashclient.Module;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -195,7 +194,6 @@ public final class CombatVisualPack {
             if (c.hitResult instanceof EntityHitResult target
                     && c.player.getAttackStrengthScale(0f) >= 0.95f) {
                 c.gameMode.attack(c.player, target.getEntity());
-                c.player.swing(InteractionHand.MAIN_HAND);
             }
         }
         @Override public void onDisable() { ticks=0; }
