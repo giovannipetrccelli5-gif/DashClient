@@ -40,6 +40,12 @@ jobs:
               26.3) api='0.160.5+26.3' ;;
             esac
             echo "::group::Minecraft $mc / Fabric API $api"
+            # Restore clean sources between targets; legacy API changes must not
+            # leak into the modern 26.2/26.3 build.
+            git restore -- src/main/java
+            case "$mc" in
+              1.21.11|26.1|26.1.1|26.1.2) python3 scripts/prepare_legacy_build.py "$mc" ;;
+            esac
             gradle clean build --no-daemon -Pminecraft_version="$mc" -Pfabric_api_version="$api"
             cp build/libs/dashclient-1.0.0.jar "dist/dashclient-1.0.0-mc$mc.jar"
             echo "::endgroup::"
