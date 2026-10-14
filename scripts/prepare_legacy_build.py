@@ -47,6 +47,32 @@ def main():
     missing = expected - replaced
     if missing:
         raise SystemExit("Legacy adapter did not find required API references: " + str(missing))
+    if sys.argv[1] == "1.21.11":
+        # 1.21.11 was still obfuscated: Fabric API ships intermediary access
+        # wideners and must be remapped with Loom's legacy plugin.
+        gradle_file = Path("build.gradle")
+        gradle = gradle_file.read_text(encoding="utf-8")
+        gradle = gradle.replace(
+            "id 'net.fabricmc.fabric-loom' version",
+            "id 'net.fabricmc.fabric-loom-remap' version",
+        )
+        gradle = gradle.replace(
+            '    minecraft "com.mojang:minecraft:${minecraft_version}"',
+            '    minecraft "com.mojang:minecraft:${minecraft_version}"'
+            + "\n    mappings loom.officialMojangMappings()",
+        )
+        gradle = gradle.replace(
+            '    implementation "net.fabricmc:fabric-loader:',
+            '    modImplementation "net.fabricmc:fabric-loader:',
+        ).replace(
+            '    implementation "net.fabricmc.fabric-api:fabric-api:',
+            '    modImplementation "net.fabricmc.fabric-api:fabric-api:',
+        )
+        if "mappings loom.officialMojangMappings()" not in gradle:
+            raise SystemExit("Missing 1.21.11 mappings dependency")
+        gradle_file.write_text(gradle, encoding="utf-8")
+        print("Switched Minecraft 1.21.11 to remapping Loom + Mojang mappings.")
+
     print(f"Prepared {sys.argv[1]} legacy API variant: {count} source files updated.")
 
 
