@@ -190,10 +190,10 @@ public final class ExpandedModulePack {
             "Chunk local X: " + (c.player.blockPosition().getX() & 15));
         add(list, "World: Block Z In Chunk", c -> c.player == null ? null :
             "Chunk local Z: " + (c.player.blockPosition().getZ() & 15));
-        add(list, "World: Current Day", c -> c.level == null ? null :
-            "Minecraft day: " + (c.level.getDayTime() / 24000));
-        add(list, "World: Sun Time", c -> c.level == null ? null :
-            "Day tick: " + (c.level.getDayTime() % 24000));
+        add(list, "World: Elapsed Days", c -> c.level == null ? null :
+            "World days elapsed: " + (c.level.getLevelData().getGameTime() / 24000));
+        add(list, "World: Day Tick Offset", c -> c.level == null ? null :
+            "Game tick mod 24000: " + (c.level.getLevelData().getGameTime() % 24000));
         add(list, "World: Thunder", c -> c.level == null ? null :
             "Thunder: " + (c.level.isThundering() ? "Yes" : "No"));
         add(list, "World: Rain", c -> c.level == null ? null :
