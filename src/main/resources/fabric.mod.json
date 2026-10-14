@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "dashclient",
+  "version": "${version}",
+  "name": "DashClient",
+  "description": "Client-side Minecraft HUD, utility and performance modules.",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.dashclient.DashClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "26.3",
+    "java": ">=25",
+    "fabric-api": ">=0.160.5+26.3"
+  }
+}
