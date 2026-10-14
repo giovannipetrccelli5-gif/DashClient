@@ -42,7 +42,7 @@ jobs:
             echo "::group::Minecraft $mc / Fabric API $api"
             # Restore clean sources between targets; legacy API changes must not
             # leak into the modern 26.2/26.3 build.
-            git restore -- src/main/java
+            git restore -- src/main/java build.gradle
             case "$mc" in
               1.21.11|26.1|26.1.1|26.1.2) python3 scripts/prepare_legacy_build.py "$mc" ;;
             esac
