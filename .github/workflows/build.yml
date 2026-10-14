@@ -34,11 +34,11 @@ jobs:
           import re, collections
           roots=Path('src/main/java/com/dashclient/modules')
           patterns=[
-              r'\\bsuper\\("([^"]+)"\\)',
-              r'\\b(?:add|style|item)\\(list,\\s*"([^"]+)"',
-              r'\\b(?:add|hud)\\(modules,\\s*"([^"]+)"',
-              r'\\binfo\\(out,\\s*"([^"]+)"',
-              r'\\bnew Module\\("([^"]+)"',
+              r'\bsuper\("([^"]+)"\)',
+              r'\b(?:add|style|item)\(list,\s*"([^"]+)"',
+              r'\b(?:add|hud)\(modules,\s*"([^"]+)"',
+              r'\binfo\(out,\s*"([^"]+)"',
+              r'\bnew Module\("([^"]+)"',
           ]
           names=[]
           for file in roots.glob('*.java'):
