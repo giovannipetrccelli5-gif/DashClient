@@ -25,8 +25,10 @@ public final class DashClient implements ClientModInitializer {
     public static KeyMapping MENU_KEY;
     public static KeyMapping ZOOM_KEY;
     public static KeyMapping AUTO_CLICKER_KEY;
+    public static KeyMapping XRAY_KEY;
     public static KeyMapping EDIT_HUD_KEY;
     public static KeyMapping CLEAN_HUD_KEY;
+    private static final OreXrayModule XRAY = new OreXrayModule();
     private boolean configLoaded;
 
     public static boolean isEnabled(String name) {
@@ -61,6 +63,9 @@ public final class DashClient implements ClientModInitializer {
         AUTO_CLICKER_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.dashclient.auto_clicker", InputConstants.Type.KEYBOARD,
             InputConstants.KEY_K, category));
+        XRAY_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+            "key.dashclient.xray", InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_X, category));
         EDIT_HUD_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.dashclient.edit_hud", InputConstants.Type.KEYBOARD,
             InputConstants.KEY_J, category));
@@ -101,6 +106,7 @@ public final class DashClient implements ClientModInitializer {
         MODULES.add(new AutoElytraModule());
         MODULES.add(new ElytraFinderModule());
         WorldPack.register(MODULES);
+        MODULES.add(XRAY);
         StatusPack.register(MODULES);
         MODULES.add(new PerformanceModule("Extreme FPS", true));
         MODULES.add(new AdaptiveFpsModule());
@@ -155,6 +161,14 @@ public final class DashClient implements ClientModInitializer {
                         "DashClient HUD: " + (m.enabled() ? "HIDDEN" : "VISIBLE")), true);
                     break;
                 }
+            }
+            while (XRAY_KEY.consumeClick()) {
+                // Prevent accidental toggling while typing or navigating menus.
+                if (client.gui.screen() != null || client.player == null) continue;
+                XRAY.setEnabled(!XRAY.enabled());
+                Config.save();
+                client.gui.hud.setOverlayMessage(Component.literal(
+                    "DashClient X-Ray: " + (XRAY.enabled() ? "ON" : "OFF")), true);
             }
             while (AUTO_CLICKER_KEY.consumeClick()) {
                 // Never toggle accidentally while typing in search or chat.
@@ -230,6 +244,13 @@ public final class DashClient implements ClientModInitializer {
                         0.72f, 1f) | 0xFF000000) : 0xFFFFFFFF;
                     graphics.text(client.font, value, x, y, color, true);
                 }
+            }
+        );
+        HudElementRegistry.addLast(
+            Identifier.fromNamespaceAndPath("dashclient", "ore_xray"), (graphics, delta) -> {
+                Minecraft client = Minecraft.getInstance();
+                if (XRAY.enabled() && !isEnabled("Clean Screenshot HUD"))
+                    XRAY.renderOverlay(client, graphics);
             }
         );
         LOGGER.info("DashClient initialized");

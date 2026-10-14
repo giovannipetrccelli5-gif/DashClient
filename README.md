@@ -31,6 +31,16 @@ FPS warnings, settings information) and survival/equipment
 readouts (armor durability by slot, saturation, player information
 and key states).
 
+### Ore X-Ray overlay
+- **X-Ray**: press **X** or toggle **Visuals → X-Ray** in the Right Shift menu.
+  Coloured boxes mark diamond, emerald, debris, gold, iron, copper,
+  redstone, lapis, coal and quartz ore, including their deepslate variants.
+- The overlay stays visible through solid blocks but **only uses terrain
+  already sent by the server**. It does not reveal unloaded chunks.
+- Scanning is spread across ticks and capped at 72 markers to reduce FPS impact
+  on Android. It uses no Sodium or terrain renderer mixins.
+- Turn it off with X. Some servers prohibit X-Ray features; follow server rules.
+
 ### Lunar-inspired DashClient module dashboard
 **Right Shift** opens an original, dark, cyan-accented dashboard,
 with category navigation, search, enabled/disabled module switches,
