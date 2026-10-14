@@ -21,6 +21,8 @@ public final class DashClient implements ClientModInitializer {
     public static KeyMapping MENU_KEY;
     public static KeyMapping ZOOM_KEY;
     public static KeyMapping AUTO_CLICKER_KEY;
+    public static KeyMapping EDIT_HUD_KEY;
+    public static KeyMapping CLEAN_HUD_KEY;
     private boolean configLoaded;
 
     public static boolean isEnabled(String name) {
@@ -53,6 +55,12 @@ public final class DashClient implements ClientModInitializer {
         AUTO_CLICKER_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.dashclient.auto_clicker", InputConstants.Type.KEYBOARD,
             InputConstants.KEY_K, category));
+        EDIT_HUD_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+            "key.dashclient.edit_hud", InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_J, category));
+        CLEAN_HUD_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+            "key.dashclient.clean_hud", InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_B, category));
 
         MODULES.add(new HudModules.Fps());
         MODULES.add(new HudModules.Coordinates());
@@ -116,6 +124,21 @@ public final class DashClient implements ClientModInitializer {
             HudFrameCache.sample(client);
             while (MENU_KEY.consumeClick()) {
                 if (client.gui.screen() == null) client.gui.setScreen(new DashScreen());
+            }
+            while (EDIT_HUD_KEY.consumeClick()) {
+                if (client.gui.screen() == null)
+                    client.gui.setScreen(new HudEditorScreen());
+            }
+            while (CLEAN_HUD_KEY.consumeClick()) {
+                if (client.gui.screen() != null || client.player == null) continue;
+                for (Module m : MODULES) {
+                    if (!m.name().equals("Clean Screenshot HUD")) continue;
+                    m.setEnabled(!m.enabled());
+                    Config.save();
+                    client.gui.hud.setOverlayMessage(Component.literal(
+                        "DashClient HUD: " + (m.enabled() ? "HIDDEN" : "VISIBLE")), true);
+                    break;
+                }
             }
             while (AUTO_CLICKER_KEY.consumeClick()) {
                 // Never toggle accidentally while typing in search or chat.
