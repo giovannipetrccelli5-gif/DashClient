@@ -31,6 +31,19 @@ FPS warnings, settings information) and survival/equipment
 readouts (armor durability by slot, saturation, player information
 and key states).
 
+### Freecam (client-only camera)
+- **F6** toggles Freecam, or open **Right Shift → Visuals → Freecam**.
+- Fly the camera with **W/A/S/D**, **Space** up and **Shift** down.
+  Hold the sprint key for faster movement.
+- Your real player stays at its original position. Freecam does **not**
+  teleport you, spoof movement, or reveal chunks the server has not sent.
+- When disabled, the view returns to your player. The module also resets
+  when you change worlds or respawn.
+- Left-click mining, attack, right-click item use and block picking are
+  suppressed while Freecam is active, to reduce accidents.
+- **Experimental:** automated builds verify compilation, not real gameplay.
+  Servers may prohibit Freecam; respect their rules.
+
 ### Village Finder (loaded-chunk detection)
 - Toggle with **V** or **Right Shift → World → Village Finder**.
 - Displays **X Y Z coordinates** on the HUD and announces newly identified

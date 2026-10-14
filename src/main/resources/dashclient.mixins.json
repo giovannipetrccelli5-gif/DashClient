@@ -1,0 +1,12 @@
+{
+  "required": false,
+  "package": "com.dashclient.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "FreecamLookMixin",
+    "FreecamInteractionMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}
