@@ -78,6 +78,8 @@ public final class DashClient implements ClientModInitializer {
         AdvancedHudPack.register(MODULES);
         CombatVisualPack.register(MODULES);
         ClientAssistPack.register(MODULES);
+        MODULES.add(new PerformanceModule("Battery Saver", true, true));
+        ExpandedModulePack.register(MODULES);
         ModuleOrder.load(MODULES);
         HudLayout.load();
 
@@ -91,6 +93,8 @@ public final class DashClient implements ClientModInitializer {
                 configLoaded = true;
             }
             AdvancedHudPack.sample(client);
+            ExpandedModulePack.tick(client);
+            HudFrameCache.sample(client);
             while (MENU_KEY.consumeClick()) {
                 if (client.gui.screen() == null) client.gui.setScreen(new DashScreen());
             }
@@ -112,18 +116,12 @@ public final class DashClient implements ClientModInitializer {
                 boolean right = isEnabled("HUD Right Align");
                 boolean rainbow = isEnabled("HUD Rainbow");
                 boolean transparent = isEnabled("HUD Transparent");
-                int maxTextWidth = Math.min(190, Math.max(100, sw - 12)) - 12;
                 int ordinal = 0;
 
-                for (Module module : MODULES) {
-                    if (!module.enabled()) continue;
-                    String value = module.hudText(client);
-                    if (value == null || value.isBlank()) continue;
-                    value = ModuleSymbols.symbol(module) + " " + value;
-                    while (!value.isEmpty() && client.font.width(value) > maxTextWidth)
-                        value = value.substring(0, value.length() - 1);
-                    if (value.isEmpty()) continue;
-                    int tw = client.font.width(value);
+                for (HudFrameCache.Line line : HudFrameCache.lines()) {
+                    Module module = line.module();
+                    int tw = line.width();
+                    String value = line.text();
                     HudLayout.Point pos = HudLayout.position(module, ordinal++, sw, sh,
                         tw, gap, right);
                     if (pos == null) continue;
