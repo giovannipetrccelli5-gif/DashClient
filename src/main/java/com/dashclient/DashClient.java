@@ -121,9 +121,13 @@ public final class DashClient implements ClientModInitializer {
             }
             AdvancedHudPack.sample(client);
             ExpandedModulePack.tick(client);
+            QualityOfLifePack.tick(client);
             HudFrameCache.sample(client);
             while (MENU_KEY.consumeClick()) {
-                if (client.gui.screen() == null) client.gui.setScreen(new DashScreen());
+                if (client.gui.screen() instanceof DashScreen)
+                    client.gui.setScreen(null);
+                else if (client.gui.screen() == null)
+                    client.gui.setScreen(new DashScreen());
             }
             while (EDIT_HUD_KEY.consumeClick()) {
                 if (client.gui.screen() == null)

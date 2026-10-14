@@ -15,6 +15,16 @@ import java.util.function.Function;
 /** Practical navigation, combat, survival and presentation tools. Opt-in. */
 public final class QualityOfLifePack {
     private QualityOfLifePack() {}
+    private static Object sessionPlayer;
+    private static long sessionStartNanos;
+
+    /** Reset the session timer on disconnect or player-identity changes. */
+    public static void tick(Minecraft c) {
+        if (c.player != sessionPlayer) {
+            sessionPlayer = c.player;
+            sessionStartNanos = c.player == null ? 0L : System.nanoTime();
+        }
+    }
     private static void info(List<Module> out, String name, Function<Minecraft,String> read) {
         out.add(new Module(name) {
             @Override public String hudText(Minecraft c) { return read.apply(c); }
@@ -35,7 +45,8 @@ public final class QualityOfLifePack {
         out.add(new Module("Streamer Privacy HUD") {});
 
         info(out,"Info: Session Runtime",c -> c.player == null ? null :
-            "Session uptime: " + (System.nanoTime() - SessionClock.START)/60_000_000_000L + " min");
+            "Session uptime: " + (sessionStartNanos == 0 ? 0 :
+                (System.nanoTime() - sessionStartNanos)/60_000_000_000L) + " min");
         info(out,"Info: Direction Cardinal",c -> {
             if(c.player==null)return null;
             double rotation = ((c.player.getYRot()%360)+360)%360;
@@ -98,10 +109,6 @@ public final class QualityOfLifePack {
             for(Module m:DashClient.MODULES)if(m.enabled())active++;
             return "Enabled modules: "+active;
         });
-    }
-
-    private static final class SessionClock {
-        static final long START=System.nanoTime();
     }
 
     /**
