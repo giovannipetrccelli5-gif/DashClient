@@ -52,13 +52,26 @@ jobs:
           name: DashClient-jar
           path: build/libs/*.jar
           if-no-files-found: error
-      - name: Publish jar to GitHub Releases
+      - name: Create Android-friendly ZIP
+        run: |
+          python3 - <<'PY'
+          import glob, pathlib, zipfile
+          jars = [p for p in glob.glob('build/libs/dashclient-*.jar')
+                  if not p.endswith('-sources.jar')]
+          assert len(jars) == 1, f'Expected one mod JAR; got {jars}'
+          with zipfile.ZipFile('DashClient-Phone-Download.zip', 'w', zipfile.ZIP_DEFLATED) as z:
+              z.write(jars[0], arcname=pathlib.Path(jars[0]).name)
+          with zipfile.ZipFile('DashClient-Phone-Download.zip') as z:
+              assert z.testzip() is None
+              assert z.namelist() == [pathlib.Path(jars[0]).name]
+          PY
+      - name: Publish jar and ZIP to GitHub Releases
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           if gh release view dev-build >/dev/null 2>&1; then
-            gh release upload dev-build build/libs/dashclient-*.jar --clobber
+            gh release upload dev-build build/libs/dashclient-*.jar DashClient-Phone-Download.zip --clobber
           else
-            gh release create dev-build build/libs/dashclient-*.jar --target "$GITHUB_SHA" --title "DashClient development build" --prerelease --notes "Minecraft 26.3 Fabric client; automatically built from the main branch."
+            gh release create dev-build build/libs/dashclient-*.jar DashClient-Phone-Download.zip --target "$GITHUB_SHA" --title "DashClient development build" --prerelease --notes "Minecraft 26.3 Fabric client; automatically built from the main branch."
           fi
