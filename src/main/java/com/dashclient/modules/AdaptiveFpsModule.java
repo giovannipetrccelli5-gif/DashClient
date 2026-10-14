@@ -7,7 +7,8 @@ import com.dashclient.Module;
 public final class AdaptiveFpsModule extends Module {
     public AdaptiveFpsModule() { super("Adaptive FPS"); }
     @Override public void onEnable() {
-        if (!DashClient.isEnabled("Performance Boost") && !DashClient.isEnabled("Extreme FPS")) {
+        if (!DashClient.isEnabled("Performance Boost") && !DashClient.isEnabled("Extreme FPS")
+                && !DashClient.isEnabled("Battery Saver")) {
             for (Module m : DashClient.MODULES) {
                 if (m.name().equals("Performance Boost")) {
                     m.setEnabled(true);
