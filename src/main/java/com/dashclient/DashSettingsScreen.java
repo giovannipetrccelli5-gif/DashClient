@@ -112,6 +112,14 @@ public final class DashSettingsScreen extends Screen {
         g.centeredText(font,"DASHCLIENT  /  SETTINGS",x+w/2,y+17,0xFF83E4FF);
         g.centeredText(font,"GRAPHICS PROFILES",x+w/2,y+48,0xFFA6CADB);
         g.centeredText(font,"HUD & PERFORMANCE",x+w/2,y+126,0xFFA6CADB);
+        if (minecraft.options != null) {
+            var o = minecraft.options;
+            String details = "FPS " + minecraft.getFps()
+                + "  |  Cap " + o.framerateLimit().get()
+                + "  |  VSync " + (o.enableVsync().get() ? "ON" : "OFF")
+                + "  |  View " + o.renderDistance().get();
+            g.centeredText(font, details, x+w/2,y+h-70,0xFF91E9B8);
+        }
         String line=status;
         while(!line.isEmpty() && font.width(line)>w-22)
             line=line.substring(0,line.length()-1);

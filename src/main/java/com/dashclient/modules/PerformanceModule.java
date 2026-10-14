@@ -58,7 +58,21 @@ public final class PerformanceModule extends Module {
         o.entityDistanceScaling().set(Math.min(o.entityDistanceScaling().get(),
             extreme ? 0.5 : 0.75));
         // Lower FPS caps reduce power draw/heat, not peak FPS.
-        if (battery) o.framerateLimit().set(Math.min(o.framerateLimit().get(), 45));
+        if (battery) {
+            o.framerateLimit().set(Math.min(o.framerateLimit().get(), 45));
+        } else if (extreme) {
+            // A low FPS cap or VSync can conceal real gains from lowering
+            // rendering work. Extreme FPS is opt-in; restore both later.
+            o.enableVsync().set(false);
+            o.framerateLimit().set(260);
+        }
+        if (extreme) {
+            // These are supported 26.3 graphics options, not render mixins.
+            o.ambientOcclusion().set(false);
+            o.improvedTransparency().set(false);
+            o.cutoutLeaves().set(false);
+            o.vignette().set(false);
+        }
         o.particles().set(ParticleStatus.MINIMAL);
         o.cloudStatus().set(CloudStatus.OFF);
         o.entityShadows().set(false);
@@ -113,6 +127,11 @@ public final class PerformanceModule extends Module {
                     o.entityDistanceScaling().get()));
             if (p.getProperty("fpsCap") != null)
                 o.framerateLimit().set(number(p, "fpsCap", o.framerateLimit().get()));
+            restoreBool(o.enableVsync(), p, "vsync");
+            restoreBool(o.ambientOcclusion(), p, "ambientOcclusion");
+            restoreBool(o.improvedTransparency(), p, "improvedTransparency");
+            restoreBool(o.cutoutLeaves(), p, "cutoutLeaves");
+            restoreBool(o.vignette(), p, "vignette");
             o.save();
             Files.deleteIfExists(BACKUP);
         } catch (Exception e) {
@@ -123,6 +142,13 @@ public final class PerformanceModule extends Module {
     private static int number(Properties p, String key, int fallback) {
         try { return Integer.parseInt(p.getProperty(key)); }
         catch (Exception e) { return fallback; }
+    }
+
+    private static void restoreBool(net.minecraft.client.OptionInstance<Boolean> option,
+                                    Properties values, String key) {
+        String saved = values.getProperty(key);
+        if ("true".equals(saved) || "false".equals(saved))
+            option.set(Boolean.parseBoolean(saved));
     }
 
     private static double decimal(Properties p, String key, double fallback) {
@@ -140,6 +166,11 @@ public final class PerformanceModule extends Module {
         p.setProperty("biome", "" + o.biomeBlendRadius().get());
         p.setProperty("entityScale", "" + o.entityDistanceScaling().get());
         p.setProperty("fpsCap", "" + o.framerateLimit().get());
+        p.setProperty("vsync", "" + o.enableVsync().get());
+        p.setProperty("ambientOcclusion", "" + o.ambientOcclusion().get());
+        p.setProperty("improvedTransparency", "" + o.improvedTransparency().get());
+        p.setProperty("cutoutLeaves", "" + o.cutoutLeaves().get());
+        p.setProperty("vignette", "" + o.vignette().get());
         return p;
     }
 

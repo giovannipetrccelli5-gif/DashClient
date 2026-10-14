@@ -13,10 +13,27 @@ public final class HudFrameCache {
     private static Object world, player;
     private static int ticks;
     private static boolean dirty = true;
+    private static boolean customDirty = true;
+    private static List<Module> customModules = List.of();
     private static final Set<String> WARNED = new HashSet<>();
 
     private HudFrameCache() {}
-    public static void invalidate() { dirty = true; }
+    public static void invalidate() {
+        dirty = true;
+        customDirty = true;
+    }
+
+    public static List<Module> customModules() {
+        if (customDirty) {
+            ArrayList<Module> enabled = new ArrayList<>();
+            for (Module m : DashClient.MODULES)
+                if (m.enabled() && m.customHud()) enabled.add(m);
+            customModules = List.copyOf(enabled);
+            customDirty = false;
+        }
+        return customModules;
+    }
+
     public static List<Line> lines() { return lines; }
 
     public static void sample(Minecraft c) {

@@ -14,10 +14,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Collections;
 
 public final class DashClient implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("DashClient");
     public static final List<Module> MODULES = new ArrayList<>();
+    private static Map<String,Module> MODULE_LOOKUP = Map.of();
     public static KeyMapping MENU_KEY;
     public static KeyMapping ZOOM_KEY;
     public static KeyMapping AUTO_CLICKER_KEY;
@@ -26,10 +30,12 @@ public final class DashClient implements ClientModInitializer {
     private boolean configLoaded;
 
     public static boolean isEnabled(String name) {
-        for (Module m : MODULES) {
-            if (m.name().equals(name)) return m.enabled();
-        }
-        return false;
+        Module module = MODULE_LOOKUP.get(name);
+        return module != null && module.enabled();
+    }
+
+    public static Module module(String name) {
+        return MODULE_LOOKUP.get(name);
     }
 
     /** Hide common identifying readouts when recording. Not a full privacy guarantee. */
@@ -106,6 +112,12 @@ public final class DashClient implements ClientModInitializer {
         DeviceHealthPack.register(MODULES);
         UtilityModulePack.register(MODULES);
         QualityOfLifePack.register(MODULES);
+        HashMap<String,Module> byName = new HashMap<>();
+        for (Module m : MODULES) {
+            if (byName.putIfAbsent(m.name(), m) != null)
+                throw new IllegalStateException("Duplicate module name: " + m.name());
+        }
+        MODULE_LOOKUP = Collections.unmodifiableMap(byName);
         ModuleOrder.load(MODULES);
         ModuleFavorites.load();
         HudLayout.load();
@@ -192,10 +204,9 @@ public final class DashClient implements ClientModInitializer {
 
                 // Icon HUDs render from current equipment every frame, allowing
                 // enchanted glint, durability bars and the totem count to update.
-                for (Module module : MODULES) {
-                    if (!module.enabled() || !module.customHud()) continue;
-                    if (isEnabled("Streamer Privacy HUD") && privateReadout(module.name()))
-                        continue;
+                boolean privacyMode = isEnabled("Streamer Privacy HUD");
+                for (Module module : HudFrameCache.customModules()) {
+                    if (privacyMode && privateReadout(module.name())) continue;
                     HudLayout.Point position = HudLayout.position(module, 0, sw, sh,
                         module.hudWidth(client), module.hudHeight(client), gap, right);
                     if (position != null)
@@ -204,7 +215,7 @@ public final class DashClient implements ClientModInitializer {
 
                 for (HudFrameCache.Line line : HudFrameCache.lines()) {
                     Module module = line.module();
-                    if (isEnabled("Streamer Privacy HUD") && privateReadout(module.name()))
+                    if (privacyMode && privateReadout(module.name()))
                         continue;
                     int tw = line.width();
                     String value = line.text();
