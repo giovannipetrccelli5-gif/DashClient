@@ -20,6 +20,13 @@ public final class DashClient implements ClientModInitializer {
     public static KeyMapping MENU_KEY;
     public static KeyMapping ZOOM_KEY;
 
+    public static boolean isEnabled(String name) {
+        for (Module m : MODULES) {
+            if (m.name().equals(name)) return m.enabled();
+        }
+        return false;
+    }
+
     @Override
     public void onInitializeClient() {
         KeyMapping.Category category = KeyMapping.Category.register(
@@ -58,6 +65,10 @@ public final class DashClient implements ClientModInitializer {
         MODULES.add(new ExtraHudModules.WorldTime());
         MODULES.add(new ExtraHudModules.ServerAddress());
         MODULES.add(new ExtraHudModules.BlockInfo());
+        // HUD, PvP information, navigation and visual customization.
+        InventoryPack.register(MODULES);
+        WorldPack.register(MODULES);
+        StatusPack.register(MODULES);
         Config.load();
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -73,14 +84,40 @@ public final class DashClient implements ClientModInitializer {
             Identifier.fromNamespaceAndPath("dashclient", "overlay"), (graphics, delta) -> {
                 Minecraft client = Minecraft.getInstance();
                 if (client.player == null) return;
-                int y = 6;
+                if (isEnabled("HUD Gameplay Only") && client.gui.screen() != null) return;
+                int screenWidth = client.getWindow().getGuiScaledWidth();
+                int screenHeight = client.getWindow().getGuiScaledHeight();
+                int width = Math.min(190, Math.max(110, screenWidth - 12));
+                int columns = Math.max(1, screenWidth / (width + 4));
+                int gap = isEnabled("HUD Compact") ? 11 : 14;
+                boolean right = isEnabled("HUD Right Align");
+                boolean transparent = isEnabled("HUD Transparent");
+                boolean rainbow = isEnabled("HUD Rainbow");
+                int row = 0, column = 0;
                 for (Module module : MODULES) {
                     if (!module.enabled()) continue;
                     String value = module.hudText(client);
                     if (value == null || value.isBlank()) continue;
-                    graphics.fill(4, y - 2, 12 + client.font.width(value), y + 11, 0x880D1421);
-                    graphics.text(client.font, value, 8, y, 0xFFFFFFFF, true);
-                    y += 14;
+                    if (row * gap + 18 > screenHeight) {
+                        row = 0;
+                        column++;
+                    }
+                    if (column >= columns) break; // Never draw past the visible HUD area.
+                    int available = width - 12;
+                    while (!value.isEmpty() && client.font.width(value) > available)
+                        value = value.substring(0, value.length() - 1);
+                    if (value.isEmpty()) continue;
+                    int x = right ? screenWidth - 8 - client.font.width(value) - column * (width + 4)
+                        : 8 + column * (width + 4);
+                    int y = 6 + row * gap;
+                    if (!transparent)
+                        graphics.fill(x - 4, y - 2, x + client.font.width(value) + 4,
+                            y + 11, 0x880D1421);
+                    int color = rainbow ? java.awt.Color.HSBtoRGB(
+                        ((System.currentTimeMillis() / 28L + row * 18L) % 360L) / 360f,
+                        0.72f, 1f) | 0xFF000000 : 0xFFFFFFFF;
+                    graphics.text(client.font, value, x, y, color, true);
+                    row++;
                 }
             }
         );
