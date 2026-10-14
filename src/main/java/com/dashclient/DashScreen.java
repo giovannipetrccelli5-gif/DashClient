@@ -27,6 +27,8 @@ public final class DashScreen extends Screen {
     private int contentX, contentW, top;
     private int columns, perPage;
     private EditBox searchBox;
+    private final List<Button> moduleButtons = new ArrayList<>();
+    private Button previousPageButton, nextPageButton, arrangeButton;
     private boolean searchRefreshPending;
     private boolean arrangeMode;
     private Module selectedModule;
@@ -81,8 +83,8 @@ public final class DashScreen extends Screen {
 
     private List<Module> filtered() {
         List<Module> all = new ArrayList<>();
-        for (Module m : DashClient.MODULES) {
-            int index = DashClient.MODULES.indexOf(m); // Stable registration index.
+        for (int index = 0; index < DashClient.MODULES.size(); index++) {
+            Module m = DashClient.MODULES.get(index);
             if (selectedTab != 0 && !TABS[selectedTab].equals(category(m, index))) continue;
             if (!m.name().toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT)))
                 continue;
@@ -127,7 +129,47 @@ public final class DashScreen extends Screen {
             }
         });
         addRenderableWidget(searchBox);
+        addRenderableWidget(Button.builder(Component.literal("FILES"), b ->
+            minecraft.gui.setScreen(new ClientImportsScreen()))
+            .bounds(panelX + panelW - 61, panelY + 6, 54, 21).build());
 
+        refreshCards();
+        int footY = panelY + panelH - 30;
+        int footerWidth = panelW - 12;
+        int gap = 4;
+        int small = Math.max(38,(footerWidth - 4 * gap) / 5);
+        addRenderableWidget(Button.builder(Component.literal("Edit HUD"), b ->
+            minecraft.gui.setScreen(new HudEditorScreen())
+        ).bounds(panelX + 6, footY, small, 22).build());
+        arrangeButton = addRenderableWidget(Button.builder(
+            Component.literal(arrangeMode ? "Save Order" : "Arrange"), b -> {
+            arrangeMode = !arrangeMode;
+            selectedModule = null;
+            ModuleOrder.save();
+            arrangeButton.setMessage(Component.literal(arrangeMode ? "Save Order" : "Arrange"));
+            refreshCards();
+        }).bounds(panelX + 6 + (small + gap), footY, small, 22).build());
+        previousPageButton = addRenderableWidget(Button.builder(Component.literal("< Prev"), b -> {
+            if (page > 0) { page--; refreshCards(); }
+        }).bounds(panelX + 6 + 2*(small + gap), footY, small, 22).build());
+        nextPageButton = addRenderableWidget(Button.builder(Component.literal("Next >"), b -> {
+            if (page < pages - 1) { page++; refreshCards(); }
+        }).bounds(panelX + 6 + 3*(small + gap), footY, small, 22).build());
+        addRenderableWidget(Button.builder(Component.literal("Done"), b ->
+            minecraft.gui.setScreen(null)
+        ).bounds(panelX + 6 + 4*(small + gap), footY, small, 22).build());
+        refreshPageButtons();
+    }
+
+    private void refreshPageButtons() {
+        if (previousPageButton != null) previousPageButton.active = page > 0;
+        if (nextPageButton != null) nextPageButton.active = page < pages - 1;
+    }
+
+    /** Only refresh module cards: never destroy or replace the focused EditBox. */
+    private void refreshCards() {
+        for (Button button : moduleButtons) removeWidget(button);
+        moduleButtons.clear();
         List<Module> matches = filtered();
         tiles.clear();
         enabledCount = 0;
@@ -150,47 +192,23 @@ public final class DashScreen extends Screen {
             String name = module.name();
             while (!name.isEmpty() && font.width(icon + name + state) > buttonW - 12)
                 name = name.substring(0, name.length() - 1);
-            addRenderableWidget(Button.builder(Component.literal(icon + name + state), b -> {
+            Button tileButton = Button.builder(Component.literal(icon + name + state), b -> {
                 if (arrangeMode) {
-                    if (selectedModule == null) {
-                        selectedModule = module;
-                    } else if (selectedModule != module) {
+                    if (selectedModule == null) selectedModule = module;
+                    else if (selectedModule != module) {
                         ModuleOrder.move(selectedModule, module);
                         selectedModule = null;
-                        rebuildWidgets();
-                    } else {
-                        selectedModule = null;
-                    }
+                        refreshCards();
+                    } else selectedModule = null;
                     return;
                 }
                 module.setEnabled(!module.enabled());
                 Config.save();
-                rebuildWidgets();
-            }).bounds(x, y, buttonW, 23).build());
+                refreshCards();
+            }).bounds(x, y, buttonW, 23).build();
+            moduleButtons.add(addRenderableWidget(tileButton));
         }
-
-        int footY = panelY + panelH - 30;
-        int footerWidth = panelW - 12;
-        int gap = 4;
-        int small = Math.max(38,(footerWidth - 4 * gap) / 5);
-        addRenderableWidget(Button.builder(Component.literal("Edit HUD"), b ->
-            minecraft.gui.setScreen(new HudEditorScreen())
-        ).bounds(panelX + 6, footY, small, 22).build());
-        addRenderableWidget(Button.builder(Component.literal(arrangeMode ? "Save Order" : "Arrange"), b -> {
-            arrangeMode = !arrangeMode;
-            selectedModule = null;
-            ModuleOrder.save();
-            rebuildWidgets();
-        }).bounds(panelX + 6 + (small + gap), footY, small, 22).build());
-        addRenderableWidget(Button.builder(Component.literal("< Prev"), b -> {
-            if (page > 0) { page--; rebuildWidgets(); }
-        }).bounds(panelX + 6 + 2*(small + gap), footY, small, 22).build()).active = page > 0;
-        addRenderableWidget(Button.builder(Component.literal("Next >"), b -> {
-            if (page < pages - 1) { page++; rebuildWidgets(); }
-        }).bounds(panelX + 6 + 3*(small + gap), footY, small, 22).build()).active = page < pages - 1;
-        addRenderableWidget(Button.builder(Component.literal("Done"), b ->
-            minecraft.gui.setScreen(null)
-        ).bounds(panelX + 6 + 4*(small + gap), footY, small, 22).build());
+        refreshPageButtons();
     }
 
     @Override public void tick() {
@@ -199,9 +217,7 @@ public final class DashScreen extends Screen {
         searchRefreshPending = false;
         // Rebuild after the input event completes and restore typing focus.
         // Characters continue to flow without tapping search again.
-        rebuildWidgets();
-        setFocused(searchBox);
-        searchBox.setFocused(true);
+        refreshCards();
     }
 
     @Override public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean dbl) {
@@ -250,7 +266,7 @@ public final class DashScreen extends Screen {
         g.text(font, "DASHCLIENT", panelX + 12, panelY + 12, 0xFF79DFFF, true);
         g.text(font, DashClient.MODULES.size() + " Modules | " + enabledCount + " Enabled",
             panelX + Math.min(115, panelW / 3), panelY + 12, 0xFFEAF6FF, true);
-        g.text(font, "v1.3", panelX + panelW - 33, panelY + 12, 0xFFA4BCD3, true);
+        g.text(font, "v2.0", panelX + panelW - 104, panelY + 12, 0xFFA4BCD3, true);
         if (arrangeMode) {
             for (Tile tile : tiles) if (tile.module == selectedModule) {
                 g.fill(tile.x - 2, tile.y - 2, tile.x + tile.width + 2, tile.y, 0xFF77E2FF);
