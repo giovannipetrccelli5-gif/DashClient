@@ -48,6 +48,23 @@ public final class PerformanceModule extends Module {
                 return;
             }
         }
+        // Backups from older DashClient builds did not save the newly
+        // controlled graphics switches. Capture their present values before
+        // applying Extreme FPS, so disabling it can restore everything.
+        Properties current = snapshot(o);
+        boolean upgraded = false;
+        for (String key : new String[]{"vsync", "ambientOcclusion",
+                "improvedTransparency", "cutoutLeaves", "vignette"}) {
+            if (!p.containsKey(key)) {
+                p.setProperty(key, current.getProperty(key));
+                upgraded = true;
+            }
+        }
+        if (upgraded && !writeBackup(p)) {
+            DashClient.LOGGER.warn("Cannot migrate old graphics backup; not applying FPS changes");
+            setEnabled(false);
+            return;
+        }
         original = p;
         active = this;
         savedView = number(p, "render", o.renderDistance().get());
