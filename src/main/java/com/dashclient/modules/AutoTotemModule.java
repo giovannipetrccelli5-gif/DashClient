@@ -2,7 +2,7 @@ package com.dashclient.modules;
 
 import com.dashclient.Module;
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 
@@ -60,9 +60,9 @@ public final class AutoTotemModule extends Module {
 
         // SWAP 40 is Minecraft's offhand swap: displaced offhand item
         // returns to the source inventory slot without ever being dropped.
-        client.gameMode.handleInventoryMouseClick(
+        client.gameMode.handleContainerInput(
             client.player.inventoryMenu.containerId,
-            menuSlot, 40, ClickType.SWAP, client.player);
+            menuSlot, 40, ContainerInput.SWAP, client.player);
         cooldown = ATTEMPT_INTERVAL_TICKS;
     }
 

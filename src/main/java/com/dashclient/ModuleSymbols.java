@@ -11,6 +11,7 @@ public final class ModuleSymbols {
         if (n.contains("health") || n.contains("heart") || n.contains("absorption")) return "♥";
         if (n.contains("target") || n.contains("crosshair") || n.contains("aura")) return "◎";
         if (n.equals("auto totem")) return "✚";
+        if (n.contains("elytra")) return "➤";
         if (n.contains("esp") || n.contains("glow") || n.contains("bright")) return "✧";
         if (n.contains("jump") || n.contains("fly") || n.contains("vertical")) return "↑";
         if (n.contains("walk") || n.contains("sprint") || n.contains("speed")) return "➤";

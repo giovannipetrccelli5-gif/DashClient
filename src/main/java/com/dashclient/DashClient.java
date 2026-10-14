@@ -69,6 +69,8 @@ public final class DashClient implements ClientModInitializer {
         // HUD, PvP information, navigation and visual customization.
         InventoryPack.register(MODULES);
         MODULES.add(new AutoTotemModule());
+        MODULES.add(new AutoElytraModule());
+        MODULES.add(new ElytraFinderModule());
         WorldPack.register(MODULES);
         StatusPack.register(MODULES);
         MODULES.add(new PerformanceModule("Extreme FPS", true));
