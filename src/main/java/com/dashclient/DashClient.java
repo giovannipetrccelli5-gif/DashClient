@@ -27,11 +27,13 @@ public final class DashClient implements ClientModInitializer {
     public static KeyMapping AUTO_CLICKER_KEY;
     public static KeyMapping XRAY_KEY;
     public static KeyMapping FREECAM_KEY;
+    public static KeyMapping AUTO_MINER_KEY;
     public static KeyMapping VILLAGE_FINDER_KEY;
     public static KeyMapping EDIT_HUD_KEY;
     public static KeyMapping CLEAN_HUD_KEY;
     private static final OreXrayModule XRAY = new OreXrayModule();
     private static final FreecamModule FREECAM = new FreecamModule();
+    private static final AutoMinerModule MINER = new AutoMinerModule();
     private boolean configLoaded;
 
     public static boolean isEnabled(String name) {
@@ -50,7 +52,8 @@ public final class DashClient implements ClientModInitializer {
             || text.contains("username") || text.contains("position")
             || text.contains("chunk") || text.contains("target name")
             || text.contains("block xyz") || text.contains("compass")
-            || text.contains("village") || text.contains("freecam");
+            || text.contains("village") || text.contains("freecam")
+            || text.contains("auto miner");
     }
 
     @Override
@@ -73,6 +76,9 @@ public final class DashClient implements ClientModInitializer {
         FREECAM_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.dashclient.freecam", InputConstants.Type.KEYBOARD,
             InputConstants.KEY_F6, category));
+        AUTO_MINER_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+            "key.dashclient.auto_miner", InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_F7, category));
         VILLAGE_FINDER_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.dashclient.village_finder", InputConstants.Type.KEYBOARD,
             InputConstants.KEY_V, category));
@@ -116,6 +122,7 @@ public final class DashClient implements ClientModInitializer {
         MODULES.add(new AutoElytraModule());
         MODULES.add(new ElytraFinderModule());
         MODULES.add(new VillageFinderModule());
+        MODULES.add(MINER);
         WorldPack.register(MODULES);
         MODULES.add(XRAY);
         MODULES.add(FREECAM);
@@ -178,6 +185,15 @@ public final class DashClient implements ClientModInitializer {
                         "DashClient HUD: " + (m.enabled() ? "HIDDEN" : "VISIBLE")), true);
                     break;
                 }
+            }
+            while (AUTO_MINER_KEY.consumeClick()) {
+                if (client.gui.screen() != null || client.player == null) continue;
+                if (MINER.enabled()) {
+                    MINER.setEnabled(false); // emergency stop
+                } else {
+                    MINER.setEnabled(true); // opens the item picker next tick
+                }
+                Config.save();
             }
             while (FREECAM_KEY.consumeClick()) {
                 // Never enable or disable Freecam while entering chat/search text.

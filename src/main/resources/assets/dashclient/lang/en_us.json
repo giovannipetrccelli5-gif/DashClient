@@ -7,5 +7,6 @@
   "key.dashclient.auto_clicker": "Toggle DashClient Auto Clicker",
   "key.dashclient.xray": "Toggle DashClient X-Ray",
   "key.dashclient.village_finder": "Toggle DashClient Village Finder",
-  "key.dashclient.freecam": "Toggle DashClient Freecam"
+  "key.dashclient.freecam": "Toggle DashClient Freecam",
+  "key.dashclient.auto_miner": "Toggle DashClient Auto Miner (F7)"
 }

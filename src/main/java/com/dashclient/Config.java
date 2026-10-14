@@ -34,6 +34,8 @@ public final class Config {
                 || module.name().equals("Adaptive FPS")
                 || module.name().equals("HUD Eco Refresh");
             boolean enabled = Boolean.parseBoolean(props.getProperty(key(module), "" + defaultOn));
+            // Never resume an autonomous miner after startup or reconnect.
+            if (module.name().equals("Auto Miner")) enabled = false;
             module.setEnabled(enabled);
         }
         if (migrated) save();
