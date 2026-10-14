@@ -7,7 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -163,7 +163,7 @@ public final class VillageFinderModule extends Module {
     private Finding detect(Minecraft client) {
         List<Entity> villagers = client.level.getEntitiesOfClass(
             Entity.class, client.player.getBoundingBox().inflate(64.0),
-            entity -> entity.getType() == EntityType.VILLAGER);
+            entity -> entity.getType() == EntityTypes.VILLAGER);
         BlockPos playerPos = client.player.blockPosition();
         Finding best = null;
         double bestDistance = Double.POSITIVE_INFINITY;
