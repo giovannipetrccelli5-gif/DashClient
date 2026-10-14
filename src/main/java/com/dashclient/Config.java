@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.util.Properties;
 
 public final class Config {
@@ -34,10 +36,17 @@ public final class Config {
         Properties props = new Properties();
         for (Module module : DashClient.MODULES)
             props.setProperty(key(module), Boolean.toString(module.enabled()));
+        Path tmp = PATH.resolveSibling(PATH.getFileName() + ".tmp");
         try {
             Files.createDirectories(PATH.getParent());
-            try (OutputStream out = Files.newOutputStream(PATH)) {
+            try (OutputStream out = Files.newOutputStream(tmp)) {
                 props.store(out, "DashClient module switches");
+            }
+            try {
+                Files.move(tmp, PATH, StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(tmp, PATH, StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (Exception e) {
             DashClient.LOGGER.warn("Could not save DashClient config", e);

@@ -43,19 +43,28 @@ public final class HudModules {
         }
     }
 
-    // Checks attack-key transitions. Very fast clicks between frames may not register.
+    // Samples the attack key every client tick, independently of HUD visibility.
+    // Very short clicks between ticks may still be missed.
     public static final class Cps extends Module {
         private final Deque<Long> clicks = new ArrayDeque<>();
         private boolean pressed;
         public Cps() { super("CPS Counter"); }
 
-        @Override public String hudText(Minecraft c) {
+        @Override public void onTick(Minecraft c) {
+            if (c.player == null || c.gui.screen() != null) {
+                clicks.clear();
+                pressed = false;
+                return;
+            }
             boolean down = c.options.keyAttack.isDown();
             long now = System.nanoTime();
             if (down && !pressed) clicks.addLast(now);
             pressed = down;
             while (!clicks.isEmpty() && now - clicks.peekFirst() > 1_000_000_000L)
                 clicks.removeFirst();
+        }
+
+        @Override public String hudText(Minecraft c) {
             return "CPS: " + clicks.size();
         }
 

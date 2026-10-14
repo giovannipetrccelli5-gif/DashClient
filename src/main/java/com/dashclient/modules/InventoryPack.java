@@ -12,6 +12,8 @@ import java.util.function.Function;
 /** Inventory and survival readouts. Nothing is changed server-side. */
 public final class InventoryPack {
     private InventoryPack() {}
+    private static final int MAIN_SLOTS = 36;
+
     private static void add(List<Module> list, String name, Function<Minecraft,String> display) {
         list.add(new Module(name) {
             @Override public String hudText(Minecraft c) { return display.apply(c); }
@@ -27,7 +29,8 @@ public final class InventoryPack {
         if (c.player == null) return 0;
         int n = 0;
         var inv = c.player.getInventory();
-        for (int slot = 0; slot < inv.getContainerSize(); slot++) {
+        // Only the 9 hotbar + 27 storage slots: exclude armor/offhand.
+        for (int slot = 0; slot < Math.min(MAIN_SLOTS, inv.getContainerSize()); slot++) {
             if (!inv.getItem(slot).isEmpty()) n++;
         }
         return n;
@@ -59,8 +62,8 @@ public final class InventoryPack {
         add(list, "Offhand Count", c -> c.player == null ? null :
             "Offhand stack: " + c.player.getOffhandItem().getCount());
         add(list, "Inventory Free Slots", c -> c.player == null ? null :
-            "Free inventory slots: " + (c.player.getInventory().getContainerSize() - used(c)));
+            "Free inventory slots: " + (MAIN_SLOTS - used(c)));
         add(list, "Inventory Fill", c -> c.player == null ? null :
-            "Inventory filled: " + used(c) + "/" + c.player.getInventory().getContainerSize());
+            "Inventory filled: " + used(c) + "/" + MAIN_SLOTS);
     }
 }

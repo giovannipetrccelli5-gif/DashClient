@@ -95,6 +95,7 @@ public final class DashClient implements ClientModInitializer {
                 boolean rainbow = isEnabled("HUD Rainbow");
                 int row = 0, column = 0;
                 for (Module module : MODULES) {
+                    if (column >= columns) break;
                     if (!module.enabled()) continue;
                     String value = module.hudText(client);
                     if (value == null || value.isBlank()) continue;

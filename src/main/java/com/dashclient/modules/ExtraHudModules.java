@@ -122,8 +122,8 @@ public final class ExtraHudModules {
         public Totems() { super("Totem Counter"); }
         @Override public String hudText(Minecraft c) {
             if (c.player == null) return null;
+            // countItem already includes the player's equipped/offhand slots.
             int count = c.player.getInventory().countItem(Items.TOTEM_OF_UNDYING);
-            if (c.player.getOffhandItem().is(Items.TOTEM_OF_UNDYING)) count++;
             return "Totems: " + count;
         }
     }
