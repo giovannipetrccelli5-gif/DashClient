@@ -41,6 +41,23 @@ public final class DashClient implements ClientModInitializer {
         MODULES.add(new HudModules.ArmorItems());
         MODULES.add(new ZoomModule());
         MODULES.add(new PerformanceModule());
+        // Optional HUD modules inspired by popular client information overlays.
+        MODULES.add(new ExtraHudModules.Ping());
+        MODULES.add(new ExtraHudModules.Memory());
+        MODULES.add(new ExtraHudModules.Playtime());
+        MODULES.add(new ExtraHudModules.Keystrokes());
+        MODULES.add(new ExtraHudModules.Effects());
+        MODULES.add(new ExtraHudModules.Biome());
+        MODULES.add(new ExtraHudModules.Chunk());
+        MODULES.add(new ExtraHudModules.Speed());
+        MODULES.add(new ExtraHudModules.Health());
+        MODULES.add(new ExtraHudModules.Hunger());
+        MODULES.add(new ExtraHudModules.Totems());
+        MODULES.add(new ExtraHudModules.ItemCount());
+        MODULES.add(new ExtraHudModules.ItemDurability());
+        MODULES.add(new ExtraHudModules.WorldTime());
+        MODULES.add(new ExtraHudModules.ServerAddress());
+        MODULES.add(new ExtraHudModules.BlockInfo());
         Config.load();
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
