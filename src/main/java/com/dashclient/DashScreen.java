@@ -27,6 +27,12 @@ public final class DashScreen extends Screen {
     private int contentX, contentW, top;
     private int columns, perPage;
     private EditBox searchBox;
+    private boolean arrangeMode;
+    private Module selectedModule;
+    private int dragStartX, dragStartY;
+    private boolean dragMoved;
+    private record Tile(Module module, int x, int y, int width, int height) {}
+    private final List<Tile> tiles = new ArrayList<>();
 
     public DashScreen() {
         super(Component.literal("DashClient Modules"));
@@ -47,8 +53,12 @@ public final class DashScreen extends Screen {
     private String category(Module m, int index) {
         if (isFps(m)) return "FPS";
         if (index >= 124) {
-            return m.name().contains("ESP") || m.name().contains("Radar")
-                || m.name().startsWith("Nearest") ? "Visuals" : "Combat";
+            String name = m.name();
+            if (name.equals("Auto Jump") || name.equals("Auto Walk")) return "Movement";
+            if (name.contains("ESP") || name.contains("Radar") ||
+                name.contains("Compass") || name.startsWith("Nearest") ||
+                name.contains("Proximity")) return "Visuals";
+            return "Combat";
         }
         if (index < 26) return "HUD";
         if (index < 43) return "Survival";
@@ -59,13 +69,14 @@ public final class DashScreen extends Screen {
 
     private List<Module> filtered() {
         List<Module> all = new ArrayList<>();
-        for (int i = 0; i < DashClient.MODULES.size(); i++) {
-            Module m = DashClient.MODULES.get(i);
-            if (selectedTab != 0 && !TABS[selectedTab].equals(category(m, i))) continue;
+        for (Module m : DashClient.MODULES) {
+            int index = DashClient.MODULES.indexOf(m); // Stable registration index.
+            if (selectedTab != 0 && !TABS[selectedTab].equals(category(m, index))) continue;
             if (!m.name().toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT)))
                 continue;
             all.add(m);
         }
+        all.sort(java.util.Comparator.comparingInt(ModuleOrder::indexOf));
         return all;
     }
 
@@ -104,6 +115,7 @@ public final class DashScreen extends Screen {
         addRenderableWidget(searchBox);
 
         List<Module> matches = filtered();
+        tiles.clear();
         enabledCount = 0;
         for (Module m : DashClient.MODULES) if (m.enabled()) enabledCount++;
         columns = contentW >= 280 ? 2 : 1;
@@ -118,11 +130,25 @@ public final class DashScreen extends Screen {
             int localIndex = i - page * perPage;
             int x = contentX + (localIndex % columns) * (buttonW + 5);
             int y = top + (localIndex / columns) * 27;
-            String state = module.enabled() ? " [ON]" : " [OFF]";
+            tiles.add(new Tile(module, x, y, buttonW, 23));
+            String state = module.enabled() ? " +" : " -";
+            String icon = ModuleSymbols.symbol(module) + " ";
             String name = module.name();
-            while (!name.isEmpty() && font.width(name + state) > buttonW - 12)
+            while (!name.isEmpty() && font.width(icon + name + state) > buttonW - 12)
                 name = name.substring(0, name.length() - 1);
-            addRenderableWidget(Button.builder(Component.literal(name + state), b -> {
+            addRenderableWidget(Button.builder(Component.literal(icon + name + state), b -> {
+                if (arrangeMode) {
+                    if (selectedModule == null) {
+                        selectedModule = module;
+                    } else if (selectedModule != module) {
+                        ModuleOrder.move(selectedModule, module);
+                        selectedModule = null;
+                        rebuildWidgets();
+                    } else {
+                        selectedModule = null;
+                    }
+                    return;
+                }
                 module.setEnabled(!module.enabled());
                 Config.save();
                 rebuildWidgets();
@@ -132,19 +158,60 @@ public final class DashScreen extends Screen {
         int footY = panelY + panelH - 30;
         int footerWidth = panelW - 12;
         int gap = 4;
-        int small = Math.max(38,(footerWidth - 3 * gap) / 4);
+        int small = Math.max(38,(footerWidth - 4 * gap) / 5);
         addRenderableWidget(Button.builder(Component.literal("Edit HUD"), b ->
             minecraft.gui.setScreen(new HudEditorScreen())
         ).bounds(panelX + 6, footY, small, 22).build());
+        addRenderableWidget(Button.builder(Component.literal(arrangeMode ? "Save Order" : "Arrange"), b -> {
+            arrangeMode = !arrangeMode;
+            selectedModule = null;
+            ModuleOrder.save();
+            rebuildWidgets();
+        }).bounds(panelX + 6 + (small + gap), footY, small, 22).build());
         addRenderableWidget(Button.builder(Component.literal("< Prev"), b -> {
             if (page > 0) { page--; rebuildWidgets(); }
-        }).bounds(panelX + 6 + (small + gap), footY, small, 22).build()).active = page > 0;
+        }).bounds(panelX + 6 + 2*(small + gap), footY, small, 22).build()).active = page > 0;
         addRenderableWidget(Button.builder(Component.literal("Next >"), b -> {
             if (page < pages - 1) { page++; rebuildWidgets(); }
-        }).bounds(panelX + 6 + 2*(small + gap), footY, small, 22).build()).active = page < pages - 1;
+        }).bounds(panelX + 6 + 3*(small + gap), footY, small, 22).build()).active = page < pages - 1;
         addRenderableWidget(Button.builder(Component.literal("Done"), b ->
             minecraft.gui.setScreen(null)
-        ).bounds(panelX + 6 + 3*(small + gap), footY, small, 22).build());
+        ).bounds(panelX + 6 + 4*(small + gap), footY, small, 22).build());
+    }
+
+    @Override public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean dbl) {
+        if (arrangeMode && event.button() == 0) {
+            dragStartX = (int) event.x();
+            dragStartY = (int) event.y();
+            dragMoved = false;
+        }
+        return super.mouseClicked(event, dbl);
+    }
+
+    @Override public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double dx, double dy) {
+        if (arrangeMode && selectedModule != null && event.button() == 0) {
+            if (Math.abs(event.x() - dragStartX) + Math.abs(event.y() - dragStartY) > 8)
+                dragMoved = true;
+            if (dragMoved) return true;
+        }
+        return super.mouseDragged(event, dx, dy);
+    }
+
+    @Override public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
+        if (arrangeMode && selectedModule != null && dragMoved) {
+            for (Tile tile : tiles) {
+                if (event.x() >= tile.x && event.x() <= tile.x + tile.width
+                    && event.y() >= tile.y && event.y() <= tile.y + tile.height) {
+                    if (tile.module != selectedModule) ModuleOrder.move(selectedModule, tile.module);
+                    break;
+                }
+            }
+            selectedModule = null;
+            dragMoved = false;
+            rebuildWidgets();
+            return true;
+        }
+        return super.mouseReleased(event);
     }
 
     @Override public void extractRenderState(GuiGraphicsExtractor g,
@@ -158,8 +225,19 @@ public final class DashScreen extends Screen {
         g.text(font, "DASHCLIENT", panelX + 12, panelY + 12, 0xFF79DFFF, true);
         g.text(font, DashClient.MODULES.size() + " Modules | " + enabledCount + " Enabled",
             panelX + Math.min(115, panelW / 3), panelY + 12, 0xFFEAF6FF, true);
-        g.text(font, "v1.1", panelX + panelW - 33, panelY + 12, 0xFFA4BCD3, true);
-        g.centeredText(font, TABS[selectedTab] + "  |  Page " + (page + 1) + "/" + pages,
+        g.text(font, "v1.2", panelX + panelW - 33, panelY + 12, 0xFFA4BCD3, true);
+        if (arrangeMode) {
+            for (Tile tile : tiles) if (tile.module == selectedModule) {
+                g.fill(tile.x - 2, tile.y - 2, tile.x + tile.width + 2, tile.y, 0xFF77E2FF);
+                g.fill(tile.x - 2, tile.y, tile.x, tile.y + tile.height, 0xFF77E2FF);
+                g.fill(tile.x + tile.width, tile.y, tile.x + tile.width + 2,
+                    tile.y + tile.height, 0xFF77E2FF);
+                g.fill(tile.x - 2, tile.y + tile.height,
+                    tile.x + tile.width + 2, tile.y + tile.height + 2, 0xFF77E2FF);
+            }
+        }
+        g.centeredText(font, (arrangeMode ? "Tap a module, then its new spot | " : TABS[selectedTab] + " | ") +
+            "Page " + (page + 1) + "/" + pages,
             contentX + contentW / 2, panelY + panelH - 43, 0xFFA9CDEA);
     }
 }

@@ -74,6 +74,8 @@ public final class DashClient implements ClientModInitializer {
         MODULES.add(new AdaptiveFpsModule());
         AdvancedHudPack.register(MODULES);
         CombatVisualPack.register(MODULES);
+        ClientAssistPack.register(MODULES);
+        ModuleOrder.load(MODULES);
         HudLayout.load();
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -114,6 +116,7 @@ public final class DashClient implements ClientModInitializer {
                     if (!module.enabled()) continue;
                     String value = module.hudText(client);
                     if (value == null || value.isBlank()) continue;
+                    value = ModuleSymbols.symbol(module) + " " + value;
                     while (!value.isEmpty() && client.font.width(value) > maxTextWidth)
                         value = value.substring(0, value.length() - 1);
                     if (value.isEmpty()) continue;
