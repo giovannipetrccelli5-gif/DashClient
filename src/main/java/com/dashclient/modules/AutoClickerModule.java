@@ -2,6 +2,7 @@ package com.dashclient.modules;
 
 import com.dashclient.Module;
 import net.minecraft.client.KeyMapping;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 
 /**
@@ -37,7 +38,7 @@ public final class AutoClickerModule extends Module {
 
         if (++tickCount >= TICKS_PER_CLICK) {
             tickCount = 0;
-            KeyMapping.click(client.options.keyAttack.getKey());
+            KeyMapping.click(InputConstants.getKey(client.options.keyAttack.saveString()));
         }
     }
 

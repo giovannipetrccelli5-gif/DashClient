@@ -111,7 +111,7 @@ public final class DashClient implements ClientModInitializer {
                     if (!module.name().equals("Auto Clicker")) continue;
                     module.setEnabled(!module.enabled());
                     Config.save();
-                    client.player.displayClientMessage(Component.literal(
+                    client.gui.hud.setOverlayMessage(Component.literal(
                         "DashClient Auto Clicker: " + (module.enabled() ? "ON" : "OFF")), true);
                     break;
                 }
