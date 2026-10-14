@@ -34,7 +34,7 @@ and key states).
 ### Village Finder (loaded-chunk detection)
 - Toggle with **V** or **Right Shift → World → Village Finder**.
 - Displays **X Y Z coordinates** on the HUD and announces newly identified
-  likely village locations in chat.
+  likely village locations on-screen.
 - Scans for **bells, beds and villagers** within 48 blocks horizontally of
   the player, using a capped incremental search for Android performance.
 - **Likely village** means village clues were found together; **Possible
