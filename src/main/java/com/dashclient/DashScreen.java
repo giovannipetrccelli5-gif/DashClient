@@ -31,6 +31,9 @@ public final class DashScreen extends Screen {
     private Button previousPageButton, nextPageButton, arrangeButton;
     private boolean searchRefreshPending;
     private boolean arrangeMode;
+    private boolean favoritesOnly;
+    private boolean enabledOnly;
+    private Button favoritesFilterButton, enabledFilterButton;
     private Module selectedModule;
     private int dragStartX, dragStartY;
     private boolean dragMoved;
@@ -54,6 +57,10 @@ public final class DashScreen extends Screen {
     }
 
     private String category(Module m, int index) {
+        if (m.name().equals("Auto Clicker") || m.name().equals("Kill Aura")
+            || m.name().equals("TriggerBot")) return "Combat";
+        if (m.name().equals("Auto Sneak") || m.name().equals("Auto Use"))
+            return "Movement";
         if (m.name().startsWith("JVM ") || m.name().startsWith("FPS Drop")
                 || m.name().equals("Active Optimization Profile")
                 || m.name().equals("HUD Update Period")
@@ -92,6 +99,8 @@ public final class DashScreen extends Screen {
         for (int index = 0; index < DashClient.MODULES.size(); index++) {
             Module m = DashClient.MODULES.get(index);
             if (selectedTab != 0 && !TABS[selectedTab].equals(category(m, index))) continue;
+            if (favoritesOnly && !ModuleFavorites.contains(m)) continue;
+            if (enabledOnly && !m.enabled()) continue;
             if (!m.name().toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT)))
                 continue;
             all.add(m);
@@ -149,9 +158,25 @@ public final class DashScreen extends Screen {
             }
         });
         addRenderableWidget(searchBox);
+        int headerRight = panelX + panelW - 7;
         addRenderableWidget(Button.builder(Component.literal("FILES"), b ->
             minecraft.gui.setScreen(new ClientImportsScreen()))
-            .bounds(panelX + panelW - 61, panelY + 6, 54, 21).build());
+            .bounds(headerRight - 54, panelY + 6, 54, 21).build());
+        favoritesFilterButton = addRenderableWidget(Button.builder(
+            Component.literal("★"), b -> {
+            favoritesOnly = !favoritesOnly;
+            page = 0;
+            refreshCards();
+            updateFilterLabels();
+        }).bounds(headerRight - 100, panelY + 6, 42, 21).build());
+        enabledFilterButton = addRenderableWidget(Button.builder(
+            Component.literal("ON"), b -> {
+            enabledOnly = !enabledOnly;
+            page = 0;
+            refreshCards();
+            updateFilterLabels();
+        }).bounds(headerRight - 146, panelY + 6, 42, 21).build());
+        updateFilterLabels();
 
         refreshCards();
         int footY = panelY + panelH - 30;
@@ -179,6 +204,13 @@ public final class DashScreen extends Screen {
             minecraft.gui.setScreen(null)
         ).bounds(panelX + 6 + 4*(small + gap), footY, small, 22).build());
         refreshPageButtons();
+    }
+
+    private void updateFilterLabels() {
+        if (favoritesFilterButton != null)
+            favoritesFilterButton.setMessage(Component.literal(favoritesOnly ? "★ ALL" : "☆"));
+        if (enabledFilterButton != null)
+            enabledFilterButton.setMessage(Component.literal(enabledOnly ? "ON ✓" : "ON"));
     }
 
     private void refreshPageButtons() {
@@ -210,7 +242,7 @@ public final class DashScreen extends Screen {
             String state = module.enabled() ? " +" : " -";
             String icon = ModuleSymbols.symbol(module) + " ";
             String name = module.name();
-            while (!name.isEmpty() && font.width(icon + name + state) > buttonW - 12)
+            while (!name.isEmpty() && font.width(icon + name + state) > buttonW - 30)
                 name = name.substring(0, name.length() - 1);
             Button tileButton = Button.builder(Component.literal(icon + name + state), b -> {
                 if (arrangeMode) {
@@ -225,8 +257,14 @@ public final class DashScreen extends Screen {
                 module.setEnabled(!module.enabled());
                 Config.save();
                 refreshCards();
-            }).bounds(x, y, buttonW, 23).build();
+            }).bounds(x, y, buttonW - 21, 23).build();
             moduleButtons.add(addRenderableWidget(tileButton));
+            Button favorite = Button.builder(Component.literal(
+                ModuleFavorites.contains(module) ? "★" : "☆"), b -> {
+                ModuleFavorites.toggle(module);
+                refreshCards();
+            }).bounds(x + buttonW - 20, y, 20, 23).build();
+            moduleButtons.add(addRenderableWidget(favorite));
         }
         refreshPageButtons();
     }
@@ -269,7 +307,7 @@ public final class DashScreen extends Screen {
             }
             selectedModule = null;
             dragMoved = false;
-            rebuildWidgets();
+            refreshCards();
             return true;
         }
         return super.mouseReleased(event);
@@ -295,9 +333,12 @@ public final class DashScreen extends Screen {
             panelX + 8, panelY + 44 + selectedTab * navSpacing +
             Math.min(22, navSpacing - 1), 0xFF77E2FF);
         g.text(font, "DASHCLIENT", panelX + 12, panelY + 12, 0xFF79DFFF, true);
-        g.text(font, DashClient.MODULES.size() + " Modules | " + enabledCount + " Enabled",
-            panelX + Math.min(115, panelW / 3), panelY + 12, 0xFFEAF6FF, true);
-        g.text(font, "v2.1", panelX + panelW - 104, panelY + 12, 0xFFA4BCD3, true);
+        if (panelW > 540)
+            g.text(font, DashClient.MODULES.size() + " Modules | " + enabledCount + " On",
+                panelX + 117, panelY + 12, 0xFFEAF6FF, true);
+        if (panelW > 340)
+            g.text(font, "v2.2", panelX + panelW - 175, panelY + 12,
+                0xFFA4BCD3, true);
         if (arrangeMode) {
             for (Tile tile : tiles) if (tile.module == selectedModule) {
                 g.fill(tile.x - 2, tile.y - 2, tile.x + tile.width + 2, tile.y, 0xFF77E2FF);
@@ -308,7 +349,8 @@ public final class DashScreen extends Screen {
                     tile.x + tile.width + 2, tile.y + tile.height + 2, 0xFF77E2FF);
             }
         }
-        g.centeredText(font, (arrangeMode ? "Tap a module, then its new spot | " : TABS[selectedTab] + " | ") +
+        g.centeredText(font, (arrangeMode ? "Tap a module, then its new spot | "
+            : favoritesOnly ? "Favorites | " : enabledOnly ? "Enabled | " : TABS[selectedTab] + " | ") +
             "Page " + (page + 1) + "/" + pages,
             contentX + contentW / 2, panelY + panelH - 43, 0xFFA9CDEA);
     }

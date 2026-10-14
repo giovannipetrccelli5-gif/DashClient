@@ -88,6 +88,7 @@ public final class DashClient implements ClientModInitializer {
         ExpandedModulePack.register(MODULES);
         DeviceHealthPack.register(MODULES);
         ModuleOrder.load(MODULES);
+        ModuleFavorites.load();
         HudLayout.load();
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
