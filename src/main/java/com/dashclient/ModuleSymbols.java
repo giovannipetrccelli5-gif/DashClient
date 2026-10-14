@@ -7,7 +7,8 @@ public final class ModuleSymbols {
     private ModuleSymbols() {}
     public static String symbol(Module m) {
         String n = m.name().toLowerCase(Locale.ROOT);
-        if (n.contains("fps") || n.contains("frame") || n.contains("performance")) return "⚡";
+        if (n.contains("fps") || n.contains("frame") || n.contains("performance")
+            || n.contains("battery") || n.contains("diagnostic")) return "⚡";
         if (n.contains("health") || n.contains("heart") || n.contains("absorption")) return "♥";
         if (n.contains("target") || n.contains("crosshair") || n.contains("aura")) return "◎";
         if (n.equals("auto totem")) return "✚";
