@@ -74,6 +74,7 @@ jobs:
                            'CombatVisualPack', 'AutoTotemModule',
                            'AutoElytraModule', 'ElytraFinderModule',
                            'ExpandedModulePack', 'AutoClickerModule', 'OreXrayModule',
+                           'VillageFinderModule',
                            'DeviceHealthPack', 'UtilityModulePack',
                            'QualityOfLifePack'):
                   assert f'com/dashclient/modules/{name}.class' in jar.namelist()

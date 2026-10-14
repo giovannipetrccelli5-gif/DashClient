@@ -23,6 +23,7 @@ public final class ModuleHelp {
             case "Auto Totem" -> "Moves spare totems into the offhand when available";
             case "Auto Elytra" -> "Equips an Elytra from inventory and starts normal gliding";
             case "Elytra Finder" -> "Finds dropped or displayed Elytras in loaded chunks";
+            case "Village Finder" -> "V to toggle | Shows coordinates near loaded villagers and village clues";
             case "Armor/Item HUD" -> "Draggable helmet, chestplate, leggings, boots and totem icons";
             case "Auto Sneak" -> "Holds crouch while playing; releases it in menus";
             case "Auto Use" -> "Holds use while playing; releases it in menus";
