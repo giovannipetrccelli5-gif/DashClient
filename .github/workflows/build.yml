@@ -44,7 +44,7 @@ jobs:
                            'AdaptiveFpsModule', 'AdaptiveDistancePolicy',
                            'CombatVisualPack', 'AutoTotemModule',
                            'AutoElytraModule', 'ElytraFinderModule',
-                           'ExpandedModulePack'):
+                           'ExpandedModulePack', 'AutoClickerModule'):
                   assert f'com/dashclient/modules/{name}.class' in jar.namelist()
           print('JAR structure and metadata verified:', jars[0])
           PY

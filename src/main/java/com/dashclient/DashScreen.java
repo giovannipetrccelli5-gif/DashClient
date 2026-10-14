@@ -27,6 +27,7 @@ public final class DashScreen extends Screen {
     private int contentX, contentW, top;
     private int columns, perPage;
     private EditBox searchBox;
+    private boolean searchRefreshPending;
     private boolean arrangeMode;
     private Module selectedModule;
     private int dragStartX, dragStartY;
@@ -120,7 +121,9 @@ public final class DashScreen extends Screen {
             if (!s.equals(query)) {
                 query = s;
                 page = 0;
-                rebuildWidgets();
+                // Rebuilding inside EditBox's character callback destroys the
+                // focused widget, especially on Android IME keyboards.
+                searchRefreshPending = true;
             }
         });
         addRenderableWidget(searchBox);
@@ -188,6 +191,17 @@ public final class DashScreen extends Screen {
         addRenderableWidget(Button.builder(Component.literal("Done"), b ->
             minecraft.gui.setScreen(null)
         ).bounds(panelX + 6 + 4*(small + gap), footY, small, 22).build());
+    }
+
+    @Override public void tick() {
+        super.tick();
+        if (!searchRefreshPending) return;
+        searchRefreshPending = false;
+        // Rebuild after the input event completes and restore typing focus.
+        // Characters continue to flow without tapping search again.
+        rebuildWidgets();
+        setFocused(searchBox);
+        searchBox.setFocused(true);
     }
 
     @Override public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean dbl) {

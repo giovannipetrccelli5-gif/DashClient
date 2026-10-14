@@ -38,7 +38,7 @@ public final class CombatVisualPack {
     public static void register(List<Module> list) {
         list.add(new Fly());
         list.add(new ExtendedView());
-        list.add(new AutoClicker());
+        list.add(new AutoClickerModule());
         list.add(new GlowEsp("Player ESP", true));
         list.add(new GlowEsp("Entity ESP", false));
 
@@ -177,28 +177,6 @@ public final class CombatVisualPack {
         @Override public void onDisable() {
             if (previous != null) Minecraft.getInstance().options.renderDistance().set(previous);
             previous=null;
-        }
-    }
-
-    /** Simple opt-in vanilla-rate nearby-entity clicker. No attack spoofing. */
-    public static final class AutoClicker extends Module {
-        private int ticks;
-        public AutoClicker() { super("Auto Clicker"); }
-        @Override public void onTick(Minecraft c) {
-            if (c.player == null || c.gameMode == null || c.gui.screen() != null) {
-                ticks=0;
-                return;
-            }
-            if (++ticks < 5) return; // max 4 attempts/second
-            ticks=0;
-            if (c.hitResult instanceof EntityHitResult target
-                    && c.player.getAttackStrengthScale(0f) >= 0.95f) {
-                c.gameMode.attack(c.player, target.getEntity());
-            }
-        }
-        @Override public void onDisable() { ticks=0; }
-        @Override public String hudText(Minecraft c) {
-            return "Auto Clicker: 4 CPS max (entities)";
         }
     }
 

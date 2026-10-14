@@ -9,6 +9,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
+import net.minecraft.network.chat.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ public final class DashClient implements ClientModInitializer {
     public static final List<Module> MODULES = new ArrayList<>();
     public static KeyMapping MENU_KEY;
     public static KeyMapping ZOOM_KEY;
+    public static KeyMapping AUTO_CLICKER_KEY;
     private boolean configLoaded;
 
     public static boolean isEnabled(String name) {
@@ -38,6 +40,10 @@ public final class DashClient implements ClientModInitializer {
         ZOOM_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.dashclient.zoom", InputConstants.Type.KEYBOARD,
             InputConstants.KEY_C, category));
+        // Rebindable in Minecraft Settings > Controls > Key Binds > DashClient.
+        AUTO_CLICKER_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+            "key.dashclient.auto_clicker", InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_K, category));
 
         MODULES.add(new HudModules.Fps());
         MODULES.add(new HudModules.Coordinates());
@@ -97,6 +103,18 @@ public final class DashClient implements ClientModInitializer {
             HudFrameCache.sample(client);
             while (MENU_KEY.consumeClick()) {
                 if (client.gui.screen() == null) client.gui.setScreen(new DashScreen());
+            }
+            while (AUTO_CLICKER_KEY.consumeClick()) {
+                // Never toggle accidentally while typing in search or chat.
+                if (client.gui.screen() != null || client.player == null) continue;
+                for (Module module : MODULES) {
+                    if (!module.name().equals("Auto Clicker")) continue;
+                    module.setEnabled(!module.enabled());
+                    Config.save();
+                    client.player.displayClientMessage(Component.literal(
+                        "DashClient Auto Clicker: " + (module.enabled() ? "ON" : "OFF")), true);
+                    break;
+                }
             }
             for (Module module : MODULES) {
                 if (module.enabled()) module.onTick(client);
