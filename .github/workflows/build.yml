@@ -15,7 +15,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -25,12 +25,17 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: current
-      - name: Build and run tests on 26.2 and 26.3
+      - name: Build and run tests for all stable versions since 1.21.11
         run: |
           set -euo pipefail
           mkdir -p dist
-          for mc in 26.2 26.3; do
+          # Oldest API first; test each against its own Minecraft remapped JAR.
+          for mc in 26.1.2 26.1.1 26.1 1.21.11 26.2 26.3; do
             case "$mc" in
+              1.21.11) api='0.141.6+1.21.11' ;;
+              26.1) api='0.145.1+26.1' ;;
+              26.1.1) api='0.145.4+26.1.1' ;;
+              26.1.2) api='0.155.3+26.1.2' ;;
               26.2) api='0.161.0+26.2' ;;
               26.3) api='0.160.5+26.3' ;;
             esac
@@ -68,11 +73,18 @@ jobs:
           assert all(0<len(name)<=120 for _,name,_ in names)
           print(f'Audited {len(names)} module identifiers: no duplicate preference keys')
           PY
-      - name: Validate both built JARs and exact Minecraft dependencies
+      - name: Validate all built JARs and exact Minecraft dependencies
         run: |
           python3 - <<'PY'
           import json, pathlib, zipfile
-          expected = {'26.2': '0.161.0+26.2', '26.3': '0.160.5+26.3'}
+          expected = {
+              '1.21.11': '0.141.6+1.21.11',
+              '26.1': '0.145.1+26.1',
+              '26.1.1': '0.145.4+26.1.1',
+              '26.1.2': '0.155.3+26.1.2',
+              '26.2': '0.161.0+26.2',
+              '26.3': '0.160.5+26.3',
+          }
           for mc, api in expected.items():
               jar_path = pathlib.Path(f'dist/dashclient-1.0.0-mc{mc}.jar')
               assert jar_path.is_file(), f'Missing build: {jar_path}'
@@ -107,15 +119,15 @@ jobs:
         if: vars.DASHCLIENT_UPLOAD_ARTIFACT == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: DashClient-26.2-and-26.3-jars
+          name: DashClient-all-supported-versions
           path: dist/*.jar
           if-no-files-found: error
-      - name: Create two Android-friendly ZIP downloads
+      - name: Create Android-friendly ZIP downloads for every version
         run: |
           python3 - <<'PY'
           import pathlib, zipfile, shutil
           dist = pathlib.Path('dist')
-          for mc in ('26.2', '26.3'):
+          for mc in ('1.21.11', '26.1', '26.1.1', '26.1.2', '26.2', '26.3'):
               jar = dist / f'dashclient-1.0.0-mc{mc}.jar'
               zip_path = dist / f'DashClient-Phone-Download-mc{mc}.zip'
               with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as z:
@@ -137,5 +149,5 @@ jobs:
           if gh release view dev-build >/dev/null 2>&1; then
             gh release upload dev-build dist/* --clobber
           else
-            gh release create dev-build dist/* --target "$GITHUB_SHA" --title "DashClient development build" --prerelease --notes "Minecraft 26.2 and 26.3 Fabric client; choose the correct JAR for your Minecraft version. Automatically built and tested for both versions."
+            gh release create dev-build dist/* --target "$GITHUB_SHA" --title "DashClient development build" --prerelease --notes "Fabric DashClient for Minecraft 1.21.11, 26.1, 26.1.1, 26.1.2, 26.2 and 26.3. Install only the JAR matching your version."
           fi

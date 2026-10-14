@@ -37,11 +37,14 @@ processResources {
         )
     }
 }
+// Minecraft 1.21.11 still runs on Java 21; releases 26.x use Java 25.
+// Compile the 1.21.11 binary with a Java 21 bytecode target.
+def targetJvm = (project.minecraft_version == '1.21.11') ? 21 : 25
 tasks.withType(JavaCompile).configureEach {
-    options.release = 25
+    options.release = targetJvm
     options.encoding = 'UTF-8'
 }
 java {
-    sourceCompatibility = JavaVersion.VERSION_25
-    targetCompatibility = JavaVersion.VERSION_25
+    sourceCompatibility = JavaVersion.toVersion(targetJvm)
+    targetCompatibility = JavaVersion.toVersion(targetJvm)
 }
