@@ -76,11 +76,37 @@ public final class ClientFileInbox {
         return Kind.INVALID;
     }
 
+    /**
+     * Stage a file dropped on the client window. The drop gesture is deliberate;
+     * callers can then install the validated staged file immediately.
+     */
+    public static Result stageDropped(Path dropped) {
+        if (dropped == null || validate(dropped) == Kind.INVALID)
+            return new Result(false, "Unsupported drop: Fabric JARs or pack ZIPs only");
+        String name = dropped.getFileName().toString();
+        if (!validName(name)) return new Result(false, "Invalid filename");
+        try {
+            Files.createDirectories(inbox());
+            Path target = inbox().resolve(name);
+            if (dropped.toAbsolutePath().normalize().equals(target.toAbsolutePath().normalize()))
+                return new Result(true, "Already in import inbox");
+            Files.copy(dropped, target);
+            return new Result(true, "Added to import inbox");
+        } catch (java.nio.file.FileAlreadyExistsException e) {
+            return new Result(false, "File already in inbox; did not overwrite");
+        } catch (IOException e) {
+            return new Result(false, "Cannot stage file; check storage permission");
+        }
+    }
+
+    private static boolean validName(String name) {
+        return name != null && name.matches("[A-Za-z0-9 _+.()\\\\-]{1,120}")
+            && !name.equals(".") && !name.equals("..");
+    }
+
     /** Only files currently in this inbox are eligible for installation. */
     public static Result install(String requestedName) {
-        if (requestedName == null || !requestedName.matches("[A-Za-z0-9 _+.()\\-]{1,120}")
-                || requestedName.equals(".") || requestedName.equals(".."))
-            return new Result(false, "Invalid filename");
+        if (!validName(requestedName)) return new Result(false, "Invalid filename");
         Path source = inbox().resolve(requestedName).normalize();
         if (!source.getParent().equals(inbox()))
             return new Result(false, "File must be inside dashclient-imports");
