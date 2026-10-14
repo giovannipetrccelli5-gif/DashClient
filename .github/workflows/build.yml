@@ -43,10 +43,11 @@ jobs:
                   assert f'com/dashclient/modules/{name}.class' in jar.namelist()
           print('JAR structure and metadata verified:', jars[0])
           PY
-      # Artifact quota may be exhausted; release upload is still required on main.
+      # Upload only when explicitly enabled: GitHub reports this account's artifact quota is full.
+      # Optional repository Actions variable: DASHCLIENT_UPLOAD_ARTIFACT=true
       - name: Upload GitHub Actions artifact
+        if: vars.DASHCLIENT_UPLOAD_ARTIFACT == 'true'
         uses: actions/upload-artifact@v4
-        continue-on-error: true
         with:
           name: DashClient-jar
           path: build/libs/*.jar
