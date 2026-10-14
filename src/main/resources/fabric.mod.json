@@ -5,6 +5,9 @@
   "name": "DashClient",
   "description": "Client-side Minecraft HUD, utility and performance modules.",
   "environment": "client",
+  "mixins": [
+    "dashclient.mixins.json"
+  ],
   "entrypoints": {
     "client": [
       "com.dashclient.DashClient"

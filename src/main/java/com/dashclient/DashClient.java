@@ -26,10 +26,12 @@ public final class DashClient implements ClientModInitializer {
     public static KeyMapping ZOOM_KEY;
     public static KeyMapping AUTO_CLICKER_KEY;
     public static KeyMapping XRAY_KEY;
+    public static KeyMapping FREECAM_KEY;
     public static KeyMapping VILLAGE_FINDER_KEY;
     public static KeyMapping EDIT_HUD_KEY;
     public static KeyMapping CLEAN_HUD_KEY;
     private static final OreXrayModule XRAY = new OreXrayModule();
+    private static final FreecamModule FREECAM = new FreecamModule();
     private boolean configLoaded;
 
     public static boolean isEnabled(String name) {
@@ -48,7 +50,7 @@ public final class DashClient implements ClientModInitializer {
             || text.contains("username") || text.contains("position")
             || text.contains("chunk") || text.contains("target name")
             || text.contains("block xyz") || text.contains("compass")
-            || text.contains("village");
+            || text.contains("village") || text.contains("freecam");
     }
 
     @Override
@@ -68,6 +70,9 @@ public final class DashClient implements ClientModInitializer {
         XRAY_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.dashclient.xray", InputConstants.Type.KEYBOARD,
             InputConstants.KEY_X, category));
+        FREECAM_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+            "key.dashclient.freecam", InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_F6, category));
         VILLAGE_FINDER_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.dashclient.village_finder", InputConstants.Type.KEYBOARD,
             InputConstants.KEY_V, category));
@@ -113,6 +118,7 @@ public final class DashClient implements ClientModInitializer {
         MODULES.add(new VillageFinderModule());
         WorldPack.register(MODULES);
         MODULES.add(XRAY);
+        MODULES.add(FREECAM);
         StatusPack.register(MODULES);
         MODULES.add(new PerformanceModule("Extreme FPS", true));
         MODULES.add(new AdaptiveFpsModule());
@@ -133,6 +139,11 @@ public final class DashClient implements ClientModInitializer {
         ModuleOrder.load(MODULES);
         ModuleFavorites.load();
         HudLayout.load();
+
+        // Suppress real-player inputs before vanilla movement is applied.
+        ClientTickEvents.START_CLIENT_TICK.register(client -> {
+            if (FREECAM.enabled()) FREECAM.beforePlayerTick(client);
+        });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             // Minecraft.Options is null during ClientModInitializer startup.
@@ -167,6 +178,14 @@ public final class DashClient implements ClientModInitializer {
                         "DashClient HUD: " + (m.enabled() ? "HIDDEN" : "VISIBLE")), true);
                     break;
                 }
+            }
+            while (FREECAM_KEY.consumeClick()) {
+                // Never enable or disable Freecam while entering chat/search text.
+                if (client.gui.screen() != null || client.player == null) continue;
+                FREECAM.setEnabled(!FREECAM.enabled());
+                Config.save();
+                client.gui.hud.setOverlayMessage(Component.literal(
+                    "DashClient Freecam: " + (FREECAM.enabled() ? "ON (F6 to exit)" : "OFF")), true);
             }
             while (VILLAGE_FINDER_KEY.consumeClick()) {
                 // V is safe to press while exploring, but not while typing.
