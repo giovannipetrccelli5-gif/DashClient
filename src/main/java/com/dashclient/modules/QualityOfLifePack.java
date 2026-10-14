@@ -110,30 +110,40 @@ public final class QualityOfLifePack {
      */
     private static final class ModuleListHud extends Module {
         private static final int MAX_LINES=12;
+        private java.util.List<String> cachedNames=java.util.List.of();
+        private int cachedWidth=70;
+        private int ticks=5;
         ModuleListHud(){super("Module List HUD");}
         @Override public boolean customHud(){return true;}
-        private java.util.List<String> names(){
-            java.util.ArrayList<String> n=new java.util.ArrayList<>();
+        @Override public void onEnable(){ticks=5;}
+        @Override public void onDisable(){cachedNames=java.util.List.of();}
+
+        // Cache enabled module labels on the game tick, never rebuild the
+        // entire module list from the render thread for every video frame.
+        @Override public void onTick(Minecraft c){
+            if(++ticks<5)return;
+            ticks=0;
+            java.util.ArrayList<String> names=new java.util.ArrayList<>();
+            int width=70;
             for(Module module:DashClient.MODULES){
-                if(module==this||!module.enabled()||module.name().startsWith("Info:"))continue;
-                n.add(module.name());
-                if(n.size()>=MAX_LINES)break;
+                if(module==this||!module.enabled()||
+                        module.name().startsWith("Info:"))continue;
+                names.add(module.name());
+                width=Math.max(width,c.font.width(module.name())+10);
+                if(names.size()>=MAX_LINES)break;
             }
-            return n;
+            cachedWidth=width;
+            cachedNames=java.util.List.copyOf(names);
         }
-        @Override public int hudWidth(Minecraft c){
-            int size=70;
-            for(String name:names())size=Math.max(size,c.font.width(name)+10);
-            return size;
-        }
+        @Override public int hudWidth(Minecraft c){return cachedWidth;}
         @Override public int hudHeight(Minecraft c){
-            return Math.max(14,names().size()*12+4);
+            return Math.max(14,cachedNames.size()*12+4);
         }
         @Override public void renderHud(Minecraft c,GuiGraphicsExtractor g,int x,int y){
-            var list=names();
-            int width=hudWidth(c);
-            g.fill(x,y,x+width,y+Math.max(14,list.size()*12+4),0xAA101826);
-            g.fill(x,y,x+3,y+Math.max(14,list.size()*12+4),0xFF6BDBFF);
+            var list=cachedNames;
+            int height=Math.max(14,list.size()*12+4);
+            g.fill(x,y,x+cachedWidth,y+height,0xAA101826);
+            g.fill(x,y,x+3,y+height,0xFF6BDBFF);
             int row=0;
             for(String name:list){
                 g.text(c.font,name,x+7,y+4+row*12,0xFFEAF5FF,true);
