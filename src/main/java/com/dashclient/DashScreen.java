@@ -51,6 +51,14 @@ public final class DashScreen extends Screen {
     }
 
     private String category(Module m, int index) {
+        if (m.name().equals("Battery Saver") || m.name().startsWith("HUD Eco") ||
+            m.name().startsWith("HUD Fast") || m.name().startsWith("HUD Minimal"))
+            return "FPS";
+        if (m.name().startsWith("Count:")) return "Survival";
+        if (m.name().startsWith("Diagnostic:")) return "FPS";
+        if (m.name().startsWith("Player:") || m.name().startsWith("Movement:"))
+            return "HUD";
+        if (m.name().startsWith("World:")) return "World";
         if (m.name().equals("Auto Totem")) return "Survival";
         if (m.name().equals("Auto Elytra")) return "Movement";
         if (m.name().equals("Elytra Finder")) return "World";
@@ -228,7 +236,7 @@ public final class DashScreen extends Screen {
         g.text(font, "DASHCLIENT", panelX + 12, panelY + 12, 0xFF79DFFF, true);
         g.text(font, DashClient.MODULES.size() + " Modules | " + enabledCount + " Enabled",
             panelX + Math.min(115, panelW / 3), panelY + 12, 0xFFEAF6FF, true);
-        g.text(font, "v1.2", panelX + panelW - 33, panelY + 12, 0xFFA4BCD3, true);
+        g.text(font, "v1.3", panelX + panelW - 33, panelY + 12, 0xFFA4BCD3, true);
         if (arrangeMode) {
             for (Tile tile : tiles) if (tile.module == selectedModule) {
                 g.fill(tile.x - 2, tile.y - 2, tile.x + tile.width + 2, tile.y, 0xFF77E2FF);
