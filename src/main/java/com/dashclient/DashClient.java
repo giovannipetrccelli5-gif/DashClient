@@ -72,6 +72,7 @@ public final class DashClient implements ClientModInitializer {
         MODULES.add(new PerformanceModule("Extreme FPS", true));
         MODULES.add(new AdaptiveFpsModule());
         AdvancedHudPack.register(MODULES);
+        CombatVisualPack.register(MODULES);
         HudLayout.load();
         Config.load();
 

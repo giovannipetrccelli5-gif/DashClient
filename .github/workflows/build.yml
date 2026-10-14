@@ -41,7 +41,8 @@ jobs:
               assert 'com/dashclient/DashClient.class' in jar.namelist()
               for name in ('InventoryPack', 'WorldPack', 'StatusPack',
                            'AdvancedHudPack', 'PerformanceModule',
-                           'AdaptiveFpsModule', 'AdaptiveDistancePolicy'):
+                           'AdaptiveFpsModule', 'AdaptiveDistancePolicy',
+                           'CombatVisualPack'):
                   assert f'com/dashclient/modules/{name}.class' in jar.namelist()
           print('JAR structure and metadata verified:', jars[0])
           PY

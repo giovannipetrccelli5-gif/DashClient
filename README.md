@@ -5,10 +5,10 @@ Built with GitHub Actions. Compatible with other optimization mods because
 DashClient does not inject into chunk rendering, world renderers, lighting,
 Sodium, Entity Culling or other mods.
 
-## 124 modules
+## 143 modules
 
-There are 124 toggleable modules: the previous 78 plus 44 new status and
-inventory readouts, and two real performance modules.
+There are 143 toggleable modules: the previous 78 plus 44 new status and
+inventory readouts, two FPS modes, and 19 combat, player radar and visuals modules.
 
 ### FPS and performance
 - **Performance Boost**: balanced low-load graphics preset, lower draw/simulation
@@ -48,3 +48,17 @@ Only enabled modules with visible text are draggable.
 or [Release page](https://github.com/giovannipetrccelli5-gif/DashClient/releases/tag/dev-build).
 Install the JAR into your Minecraft Fabric mods folder. Compilation
 and unit tests run in GitHub Actions; gameplay should be tested separately.
+
+### Experimental Combat & Visual modules (19)
+- **Auto Clicker**: up to four attempts/second at a crosshair-selected
+  entity when the vanilla attack cooldown is sufficiently recovered.
+- **Player ESP** and **Entity ESP**: glowing outlines on nearby, already
+  loaded entities. No hidden or unsent terrain is revealed.
+- **Fly**: experimental local survival flight; the server remains authoritative.
+  If flight is not permitted, expect rubber-banding, kick or moderation.
+  No anti-cheat bypasses or packet spoofing are implemented.
+- **Extended View**: tries to increase local render distance to 24 chunks.
+  Cannot display world data beyond what the server sends.
+- Nearby player/mob radar, nearest mob/player, entity velocity/coordinates,
+  target health and attack cooldown, fall/water/lava state.
+- **Combat and Visuals** categories in the Right Shift dashboard.

@@ -16,7 +16,7 @@ import java.util.Locale;
  */
 public final class DashScreen extends Screen {
     private static final String[] TABS = {
-        "All", "HUD", "Survival", "World", "Movement", "Extras", "FPS"
+        "All", "FPS", "Combat", "Visuals", "HUD", "Survival", "World", "Movement", "Extras"
     };
     private int selectedTab = 0;
     private int page = 0;
@@ -46,6 +46,10 @@ public final class DashScreen extends Screen {
 
     private String category(Module m, int index) {
         if (isFps(m)) return "FPS";
+        if (index >= 124) {
+            return m.name().contains("ESP") || m.name().contains("Radar")
+                || m.name().startsWith("Nearest") ? "Visuals" : "Combat";
+        }
         if (index < 26) return "HUD";
         if (index < 43) return "Survival";
         if (index < 61) return "World";
