@@ -23,10 +23,10 @@ import java.util.List;
  * It cannot see chunks or block data the server has not sent.
  */
 public final class OreXrayModule extends Module {
-    private static final int HORIZONTAL_RADIUS = 20;
-    private static final int VERTICAL_RADIUS = 16;
-    private static final int COLUMNS_PER_TICK = 3;
-    private static final int MAX_MARKERS = 72;
+    private static final int MAX_RADIUS = 32 * 16;
+    private static final int CHUNKS_PER_TICK = 2;
+    private static final int MAX_MARKERS = 512;
+
 
     private enum Ore {
         DIAMOND("Diamond", 0xFF5CF4F4),
@@ -54,72 +54,74 @@ public final class OreXrayModule extends Module {
 
     private ClientLevel scannedLevel;
     private BlockPos scanCenter;
-    private int nextX = -HORIZONTAL_RADIUS;
+    private int nextChunk = 0;
+    private int radiusChunks = 0;
     private final List<Target> collecting = new ArrayList<>();
     private List<Target> nearby = List.of();
 
-    public OreXrayModule() {
-        super("X-Ray");
-    }
+    public OreXrayModule() { super("X-Ray"); }
 
-    @Override
-    public void onDisable() {
-        clear();
-    }
+    @Override public void onDisable() { clear(); }
 
     private void clear() {
         scannedLevel = null;
         scanCenter = null;
-        nextX = -HORIZONTAL_RADIUS;
+        nextChunk = 0;
+        radiusChunks = 0;
         collecting.clear();
         nearby = List.of();
     }
 
-    private void startScan(BlockPos center) {
+    private void startScan(BlockPos center, int chunks) {
         scanCenter = center.immutable();
-        nextX = -HORIZONTAL_RADIUS;
+        radiusChunks = chunks;
+        nextChunk = 0;
         collecting.clear();
     }
 
-    @Override
-    public void onTick(Minecraft client) {
-        if (client.player == null || client.level == null) {
-            clear();
-            return;
-        }
-        if (scannedLevel != client.level) {
-            clear();
-            scannedLevel = client.level;
-        }
+    @Override public void onTick(Minecraft client) {
+        if (client.player == null || client.level == null) { clear(); return; }
+        if (scannedLevel != client.level) { clear(); scannedLevel = client.level; }
         BlockPos playerPos = client.player.blockPosition();
-        if (scanCenter == null
-                || Math.abs(playerPos.getX() - scanCenter.getX()) > 8
-                || Math.abs(playerPos.getY() - scanCenter.getY()) > 8
-                || Math.abs(playerPos.getZ() - scanCenter.getZ()) > 8) {
-            startScan(playerPos);
+        int chunks = Math.max(2, Math.min(MAX_RADIUS / 16, client.options.renderDistance().get()));
+        if (scanCenter == null || chunks != radiusChunks
+                || Math.abs(playerPos.getX() - scanCenter.getX()) > 16
+                || Math.abs(playerPos.getZ() - scanCenter.getZ()) > 16
+                || Math.abs(playerPos.getY() - scanCenter.getY()) > 16) {
+            startScan(playerPos, chunks);
         }
 
-        // Incremental scan limits the per-tick cost on Android.
+        // Traverse loaded chunk sections incrementally instead of checking
+        // millions of individual blocks each tick. Never force-load chunks.
+        int diameter = radiusChunks * 2 + 1;
+        int total = diameter * diameter;
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
-        for (int columns = 0; columns < COLUMNS_PER_TICK
-                && nextX <= HORIZONTAL_RADIUS; columns++, nextX++) {
-            int x = scanCenter.getX() + nextX;
-            for (int dz = -HORIZONTAL_RADIUS; dz <= HORIZONTAL_RADIUS; dz++) {
-                int z = scanCenter.getZ() + dz;
-                cursor.set(x, scanCenter.getY(), z);
-                if (!client.level.hasChunkAt(cursor)) continue;
-                for (int dy = -VERTICAL_RADIUS; dy <= VERTICAL_RADIUS; dy++) {
-                    cursor.set(x, scanCenter.getY() + dy, z);
-                    Ore ore = oreFor(client.level.getBlockState(cursor));
-                    if (ore != null) collecting.add(new Target(cursor.immutable(), ore));
-                }
+        for (int batch = 0; batch < CHUNKS_PER_TICK && nextChunk < total; batch++, nextChunk++) {
+            int cx = (scanCenter.getX() >> 4) + (nextChunk % diameter) - radiusChunks;
+            int cz = (scanCenter.getZ() >> 4) + (nextChunk / diameter) - radiusChunks;
+            cursor.set(cx << 4, scanCenter.getY(), cz << 4);
+            if (!client.level.hasChunkAt(cursor)) continue;
+            var chunk = client.level.getChunk(cx, cz);
+            int minSection = client.level.getMinSectionY();
+            int sections = chunk.getSectionsCount();
+            for (int si = 0; si < sections; si++) {
+                var section = chunk.getSection(si);
+                if (section.hasOnlyAir()) continue;
+                int baseY = (minSection + si) << 4;
+                for (int y = 0; y < 16; y++) for (int z = 0; z < 16; z++)
+                    for (int x = 0; x < 16; x++) {
+                        Ore ore = oreFor(section.getBlockState(x, y, z));
+                        if (ore != null) {
+                            cursor.set((cx << 4) + x, baseY + y, (cz << 4) + z);
+                            collecting.add(new Target(cursor.immutable(), ore));
+                        }
+                    }
             }
         }
-        if (nextX > HORIZONTAL_RADIUS) {
+        if (nextChunk >= total) {
             BlockPos center = scanCenter;
             collecting.sort(Comparator.comparingDouble(t -> distanceSquared(t.position(), center)));
             nearby = List.copyOf(collecting.subList(0, Math.min(MAX_MARKERS, collecting.size())));
-            // Keep the last complete scan on screen until the next one completes.
             scanCenter = null;
             collecting.clear();
         }
