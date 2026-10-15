@@ -32,21 +32,28 @@ FPS warnings, settings information) and survival/equipment
 readouts (armor durability by slot, saturation, player information
 and key states).
 
-### Auto Miner (nearby selected-block mining)
-- Toggle **F7** or **Right Shift → World → Auto Miner** to open the new picker.
-  It searches every item registered with Minecraft and shows its item icon;
-  only actual placeable block items can be selected as mining targets.
-- Choose a block (e.g. Stone or Diamond Ore), then press **Start Mining**.
-  The miner looks for matching blocks in a **16-block radius** of where it
-  started. It uses normal block-breaking actions, walks flat safe routes,
-  and continues mining nearby targets without holding input.
-- **F7 turns it off immediately.** It also stops mining on low health,
-  low hunger, disconnect, death or after 30 minutes. No automatic startup.
-- Does not dig tunnels through other blocks, cross lava/water, climb stairs,
-  or explore unloaded areas. Unreachable blocks are skipped. No pathfinding
-  beyond the bounded, flat area and no anti-cheat bypass.
-- Equip an appropriate tool before starting. Run only where automation is
-  permitted; some public servers disallow it.
+### Auto Miner (continuous mining + tunneling)
+- Toggle **F7** or **Right Shift → World → Auto Miner** to open the searchable
+  Minecraft item/block picker. Choose a placeable block (for example Diamond Ore)
+  and tap **Start Mining**.
+- The miner continuously digs a **two-block-high strip-mining tunnel** in your
+  initial facing direction when your selected block is not nearby. When a
+  matching block is found in *already loaded* terrain within 16 blocks,
+  it can excavate a safe same-height corridor toward it, then break the ore.
+  Stone/deepslate and other ordinary blocks on that route may also be mined.
+- **It no longer stops after three mined blocks or after 30 minutes.** It keeps
+  searching until manually stopped (F7, module toggle, or Stop / Back) or until
+  it disconnects, dies, encounters unsafe conditions, or runs out of safe paths.
+  If a safe path is temporarily unavailable it may wait or change direction.
+- The HUD counts selected target blocks separately from other cleared blocks.
+  Equivalent normal/deepslate ore variants count as one selected ore type.
+- The miner operates **only in loaded chunks** with vanilla block breaking and
+  normal reach; it cannot magically locate ores in unknown terrain.
+  It **never digs downward shafts**, bridges gaps, crosses liquids, breaks
+  protected/unbreakable blocks, or bypasses server rules.
+- Equip a suitable pickaxe and supply food/tool durability before starting.
+  Check on it periodically; unattended automation may be prohibited on servers,
+  and Minecraft survival risks cannot be eliminated.
 
 ### Freecam (client-only camera)
 - **F6** toggles Freecam, or open **Right Shift → Visuals → Freecam**.
@@ -79,8 +86,11 @@ and key states).
   redstone, lapis, coal and quartz ore, including their deepslate variants.
 - The overlay stays visible through solid blocks but **only uses terrain
   already sent by the server**. It does not reveal unloaded chunks.
-- Scanning is spread across ticks and capped at 72 markers to reduce FPS impact
-  on Android. It uses no Sodium or terrain renderer mixins.
+- X-Ray scans **loaded chunks out toward your Minecraft render-distance
+  setting** (up to 32 chunks), prioritizing closer chunks and updating markers
+  as results arrive. A bounded **512-marker** display prevents unlimited memory
+  growth or severe Android FPS drops. This is not every ore in the world.
+  It uses no Sodium or terrain renderer mixins.
 - Turn it off with X. Some servers prohibit X-Ray features; follow server rules.
 
 ### Lunar-inspired DashClient module dashboard
