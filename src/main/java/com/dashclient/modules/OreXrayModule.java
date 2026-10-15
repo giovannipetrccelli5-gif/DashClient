@@ -13,9 +13,10 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.PriorityQueue;
+import java.util.ArrayList;
 
 /**
  * Client-side ore X-Ray: projects boxes around ores already present in loaded chunks.
@@ -25,6 +26,7 @@ import java.util.List;
 public final class OreXrayModule extends Module {
     private static final int MAX_RADIUS = 32 * 16;
     private static final int CHUNKS_PER_TICK = 2;
+    private static final int SNAPSHOT_INTERVAL_CHUNKS = 12;
     private static final int MAX_MARKERS = 512;
 
 
@@ -56,7 +58,11 @@ public final class OreXrayModule extends Module {
     private BlockPos scanCenter;
     private int nextChunk = 0;
     private int radiusChunks = 0;
-    private final List<Target> collecting = new ArrayList<>();
+    // A bounded heap prevents a full render-distance search from allocating
+    // an unbounded list for coal, copper, iron and other common ores.
+    private final PriorityQueue<Target> collecting = new PriorityQueue<>(
+        Comparator.<Target>comparingDouble(t -> distanceSquared(t.position(), scanCenter)).reversed());
+    private List<BlockPos> chunkOrder = List.of();
     private List<Target> nearby = List.of();
 
     public OreXrayModule() { super("X-Ray"); }
@@ -69,6 +75,7 @@ public final class OreXrayModule extends Module {
         nextChunk = 0;
         radiusChunks = 0;
         collecting.clear();
+        chunkOrder = List.of();
         nearby = List.of();
     }
 
@@ -77,6 +84,22 @@ public final class OreXrayModule extends Module {
         radiusChunks = chunks;
         nextChunk = 0;
         collecting.clear();
+        // Near-first order makes useful results appear quickly even before a
+        // very large search finishes. Beyond-server chunks are never loaded.
+        List<BlockPos> ordered = new ArrayList<>();
+        for (int dx = -chunks; dx <= chunks; dx++) {
+            for (int dz = -chunks; dz <= chunks; dz++) {
+                if (dx * dx + dz * dz > chunks * chunks) continue;
+                ordered.add(new BlockPos((center.getX() >> 4) + dx, 0,
+                    (center.getZ() >> 4) + dz));
+            }
+        }
+        ordered.sort(Comparator.comparingDouble(pos -> {
+            double dx = pos.getX() - (center.getX() >> 4);
+            double dz = pos.getZ() - (center.getZ() >> 4);
+            return dx * dx + dz * dz;
+        }));
+        chunkOrder = List.copyOf(ordered);
     }
 
     @Override public void onTick(Minecraft client) {
@@ -91,14 +114,15 @@ public final class OreXrayModule extends Module {
             startScan(playerPos, chunks);
         }
 
-        // Traverse loaded chunk sections incrementally instead of checking
-        // millions of individual blocks each tick. Never force-load chunks.
-        int diameter = radiusChunks * 2 + 1;
-        int total = diameter * diameter;
+        // Incremental near-first scan; never call getChunk for unloaded
+        // coordinates. Show snapshots during the scan instead of waiting
+        // for the outermost chunk before showing any markers.
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
-        for (int batch = 0; batch < CHUNKS_PER_TICK && nextChunk < total; batch++, nextChunk++) {
-            int cx = (scanCenter.getX() >> 4) + (nextChunk % diameter) - radiusChunks;
-            int cz = (scanCenter.getZ() >> 4) + (nextChunk / diameter) - radiusChunks;
+        for (int batch = 0; batch < CHUNKS_PER_TICK && nextChunk < chunkOrder.size();
+             batch++, nextChunk++) {
+            BlockPos cp = chunkOrder.get(nextChunk);
+            int cx = cp.getX();
+            int cz = cp.getZ();
             cursor.set(cx << 4, scanCenter.getY(), cz << 4);
             if (!client.level.hasChunkAt(cursor)) continue;
             var chunk = client.level.getChunk(cx, cz);
@@ -106,22 +130,35 @@ public final class OreXrayModule extends Module {
             int sections = chunk.getSectionsCount();
             for (int si = 0; si < sections; si++) {
                 var section = chunk.getSection(si);
-                if (section.hasOnlyAir()) continue;
+                if (section.hasOnlyAir() || !section.maybeHas(state -> oreFor(state) != null))
+                    continue;
                 int baseY = (minSection + si) << 4;
                 for (int y = 0; y < 16; y++) for (int z = 0; z < 16; z++)
                     for (int x = 0; x < 16; x++) {
                         Ore ore = oreFor(section.getBlockState(x, y, z));
-                        if (ore != null) {
-                            cursor.set((cx << 4) + x, baseY + y, (cz << 4) + z);
-                            collecting.add(new Target(cursor.immutable(), ore));
+                        if (ore == null) continue;
+                        cursor.set((cx << 4) + x, baseY + y, (cz << 4) + z);
+                        Target candidate = new Target(cursor.immutable(), ore);
+                        if (collecting.size() < MAX_MARKERS) {
+                            collecting.add(candidate);
+                        } else if (distanceSquared(candidate.position(), scanCenter)
+                                < distanceSquared(collecting.peek().position(), scanCenter)) {
+                            collecting.poll();
+                            collecting.add(candidate);
                         }
                     }
             }
         }
-        if (nextChunk >= total) {
-            BlockPos center = scanCenter;
-            collecting.sort(Comparator.comparingDouble(t -> distanceSquared(t.position(), center)));
-            nearby = List.copyOf(collecting.subList(0, Math.min(MAX_MARKERS, collecting.size())));
+        if (nextChunk % SNAPSHOT_INTERVAL_CHUNKS < CHUNKS_PER_TICK
+                || nextChunk >= chunkOrder.size()) {
+            List<Target> visible = new ArrayList<>(collecting);
+            visible.sort(Comparator.comparingDouble(t ->
+                distanceSquared(t.position(), client.player.blockPosition())));
+            nearby = List.copyOf(visible);
+        }
+        if (nextChunk >= chunkOrder.size()) {
+            // Preserve markers while waiting for the next refresh; a complete
+            // round doesn't need to clear the overlay.
             scanCenter = null;
             collecting.clear();
         }
