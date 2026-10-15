@@ -24,6 +24,7 @@ public final class DashClient implements ClientModInitializer {
     private static Map<String,Module> MODULE_LOOKUP = Map.of();
     public static KeyMapping MENU_KEY;
     public static KeyMapping ZOOM_KEY;
+    public static KeyMapping ZOOM_ALTERNATE_KEY;
     public static KeyMapping AUTO_CLICKER_KEY;
     public static KeyMapping XRAY_KEY;
     public static KeyMapping FREECAM_KEY;
@@ -77,6 +78,11 @@ public final class DashClient implements ClientModInitializer {
         ZOOM_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.dashclient.zoom", keyboardType(),
             InputConstants.KEY_C, category));
+        // Alternate hold-to-zoom key, useful if the OS intercepts C.
+        // Existing saved keybinds stay intact when DashClient is upgraded.
+        ZOOM_ALTERNATE_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+            "key.dashclient.zoom_alternate", keyboardType(),
+            InputConstants.KEY_Z, category));
         // Rebindable in Minecraft Settings > Controls > Key Binds > DashClient.
         AUTO_CLICKER_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.dashclient.auto_clicker", keyboardType(),

@@ -125,8 +125,14 @@ version separately and will not publish an unverified build.
 Android gameplay requires separate runtime testing.
 
 ### Experimental Combat & Visual modules (19)
-- **Auto Clicker**: up to four attempts/second at a crosshair-selected
-  entity when the vanilla attack cooldown is sufficiently recovered.
+- **Auto Clicker**: schedules 15 ordinary attack inputs per second at the
+  normal 20 client ticks/second (1.5x the previous 10 CPS). Actual hits are
+  still governed by Minecraft and the server's cooldowns. Toggle with K.
+- **Zoom**: hold C or the new alternate Z key while in-game. Z is intended
+  for Android/desktop environments that may intercept C and open the system
+  app drawer. Release the key or open a menu to restore your FOV. Existing
+  saved C bindings remain unchanged; remap/unbind them under Settings >
+  Controls > Key Binds > DashClient if Android intercepts the key.
 - **Player ESP** and **Entity ESP**: glowing outlines on nearby, already
   loaded entities. No hidden or unsent terrain is revealed.
 - **Fly**: experimental local survival flight; the server remains authoritative.
