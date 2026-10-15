@@ -1,7 +1,8 @@
 {
   "key.category.dashclient.controls": "DashClient",
   "key.dashclient.menu": "Open DashClient Menu",
-  "key.dashclient.zoom": "DashClient Zoom",
+  "key.dashclient.zoom": "DashClient Zoom (C)",
+  "key.dashclient.zoom_alternate": "DashClient Zoom Alternative (Z)",
   "key.dashclient.edit_hud": "Edit DashClient HUD",
   "key.dashclient.clean_hud": "Toggle DashClient Clean Screenshot HUD",
   "key.dashclient.auto_clicker": "Toggle DashClient Auto Clicker",
