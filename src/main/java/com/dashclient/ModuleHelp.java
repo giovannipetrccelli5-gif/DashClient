@@ -16,7 +16,7 @@ public final class ModuleHelp {
             case "HUD Eco Refresh" -> "Refreshes HUD text once per second instead of every frame";
             case "HUD Fast Refresh" -> "Samples enabled HUD readouts every game tick";
             case "Auto Clicker" -> "K to toggle | 10 CPS native vanilla attack input";
-            case "X-Ray" -> "X to toggle | Highlights ores through walls in loaded chunks (20-block radius)";
+            case "X-Ray" -> "X to toggle | Highlights ores in loaded chunks within up to 32 chunks of render distance";
             case "Freecam" -> "F6 to toggle | Fly a local spectator camera (WASD, Space, Shift, Sprint)";
             case "Module List HUD" -> "Draggable list of up to twelve active modules";
             case "Clean Screenshot HUD" -> "Hides DashClient overlays while enabled";
@@ -25,7 +25,7 @@ public final class ModuleHelp {
             case "Auto Elytra" -> "Equips an Elytra from inventory and starts normal gliding";
             case "Elytra Finder" -> "Finds dropped or displayed Elytras in loaded chunks";
             case "Village Finder" -> "V to toggle | Shows coordinates near loaded villagers and village clues";
-            case "Auto Miner" -> "F7 to toggle | Pick any block from a searchable item menu; automatically mine safe nearby targets";
+            case "Auto Miner" -> "F7 to toggle | Select a block; continuously tunnels, clears obstacles and searches until stopped";
             case "Armor/Item HUD" -> "Draggable helmet, chestplate, leggings, boots and totem icons";
             case "Auto Sneak" -> "Holds crouch while playing; releases it in menus";
             case "Auto Use" -> "Holds use while playing; releases it in menus";
