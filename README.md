@@ -9,7 +9,7 @@ Press **Right Shift** for the new DashClient mod menu. Search modules, toggle li
 Hold **C** to use the optional zoom. Supported readouts: FPS, coordinates, ping, direction, health, speed, time, memory, clock, playtime, rotation and dimension. All settings and HUD positions persist.
 
 ## Important limitations
-DashClient is **not Lunar Client** and is not affiliated with Lunar Client. No Lunar code, logo, textures, cosmetics, account service or launcher is included. The settings screen's Restore button restores presets changed during its current instance only; leave the screen open if you intend to revert immediately. Graphics presets do not guarantee FPS gains. Existing Java launchers with Fabric support can run the built JAR. A standalone desktop launcher is not included.
+DashClient is **not Lunar Client** and is not affiliated with Lunar Client. No Lunar code, logo, textures, cosmetics, account service or launcher is included. The settings screen's Restore button restores the snapshot taken before the first preset used in the current game session. Graphics presets do not guarantee FPS gains. Existing Java launchers with Fabric support can run the built JAR. A standalone desktop launcher is not included.
 
 ## Builds
 GitHub Actions targets: Minecraft Java 1.21.11, 26.1, 26.1.1, 26.1.2, 26.2 and 26.3. Build artifacts are only ready when the workflow passes. A build verifies compilation; real-device playtesting is still necessary.
