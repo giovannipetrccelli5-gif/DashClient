@@ -46,9 +46,23 @@ public final class DashTheme {
         g.centeredText(font,actual,x+w/2,y+(h-8)/2,text);
     }
     public static void switcher(GuiGraphicsExtractor g,int x,int y,boolean enabled){
-        rounded(g,x,y,37,18,enabled?0xFF477D83:0xFF3A465B);
-        rounded(g,x+2,y+2,33,14,enabled?0xFF295763:0xFF273244);
-        rounded(g,x+(enabled?21:3),y+3,13,12,enabled?GREEN:0xFF95A5BC);
+        switcher(g,x,y,enabled?1f:0f);
+    }
+    /** Toggle thumb interpolates across the track for a subtle native animation. */
+    public static void switcher(GuiGraphicsExtractor g,int x,int y,float progress){
+        float t=Math.max(0f,Math.min(1f,progress));
+        rounded(g,x,y,37,18,mix(0xFF3A465B,0xFF477D83,t));
+        rounded(g,x+2,y+2,33,14,mix(0xFF273244,0xFF295763,t));
+        rounded(g,x+3+Math.round(18*t),y+3,13,12,
+            mix(0xFF95A5BC,GREEN,t));
+    }
+    public static int mix(int left,int right,float t){
+        t=Math.max(0f,Math.min(1f,t));
+        int a=Math.round(((left>>>24)&255)*(1-t)+((right>>>24)&255)*t);
+        int r=Math.round(((left>>>16)&255)*(1-t)+((right>>>16)&255)*t);
+        int g=Math.round(((left>>>8)&255)*(1-t)+((right>>>8)&255)*t);
+        int b=Math.round((left&255)*(1-t)+(right&255)*t);
+        return (a<<24)|(r<<16)|(g<<8)|b;
     }
     public static String fit(Font font,String str,int pixels){
         if(str==null||pixels<=0)return "";
