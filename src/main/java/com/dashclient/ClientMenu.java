@@ -6,8 +6,10 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * DashClient v3 click GUI, drawn independently using Minecraft primitives.
@@ -25,6 +27,23 @@ public final class ClientMenu extends Screen {
     private EditBox search;
     private final List<Feature> matches=new ArrayList<>();
     private final List<ModuleCard> shownCards=new ArrayList<>();
+    private final Map<String,Float> hoverFade=new HashMap<>();
+    private final Map<String,Float> toggleFade=new HashMap<>();
+    private int pointerX,pointerY;
+
+    @Override public void tick(){
+        super.tick();
+        for(Feature f:DashClient.FEATURES){
+            float current=toggleFade.getOrDefault(f.id,f.enabled?1f:0f);
+            float goal=f.enabled?1f:0f;
+            toggleFade.put(f.id,current+(goal-current)*0.35f);
+        }
+        for(ModuleCard card:shownCards){
+            float current=hoverFade.getOrDefault(card.feature.id,0f);
+            float goal=card.contains(pointerX,pointerY)?1f:0f;
+            hoverFade.put(card.feature.id,current+(goal-current)*0.35f);
+        }
+    }
 
     public ClientMenu(){super(Component.literal("DashClient v3"));}
     @Override protected void init(){
@@ -161,6 +180,7 @@ public final class ClientMenu extends Screen {
     @Override public void onClose(){minecraft.gui.setScreen(null);}
 
     @Override public void extractRenderState(GuiGraphicsExtractor g,int mx,int my,float frame){
+        pointerX=mx;pointerY=my;
         rebuildCards();
         g.fill(0,0,width,height,DashTheme.BACKDROP);
 
@@ -209,7 +229,10 @@ public final class ClientMenu extends Screen {
                 bodyY+28,DashTheme.MUTED);
         }else{
             for(ModuleCard card:shownCards)
-                card.draw(g,font,mx,my,card.feature==selected);
+                card.draw(g,font,mx,my,card.feature==selected,
+                    hoverFade.getOrDefault(card.feature.id,0f),
+                    toggleFade.getOrDefault(card.feature.id,
+                        card.feature.enabled?1f:0f));
         }
 
         // Functional page navigation and the four shortcut destinations.
