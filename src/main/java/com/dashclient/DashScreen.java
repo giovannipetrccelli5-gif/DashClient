@@ -123,8 +123,8 @@ public final class DashScreen extends Screen {
     }
 
     @Override protected void init() {
-        panelW = Math.min(width - 12, 650);
-        panelH = Math.min(height - 12, 390);
+        panelW = Math.min(width - 12, 760);
+        panelH = Math.min(height - 12, 430);
         panelX = (width - panelW) / 2;
         panelY = (height - panelH) / 2;
         int sideW = panelW < 400 ? 78 : 114;
@@ -175,6 +175,7 @@ public final class DashScreen extends Screen {
         int headerSize = panelW < 400 ? 31 : 42;
         int filesW = panelW < 400 ? 40 : 54;
         int settingsW = panelW < 400 ? 35 : 50;
+        int profilesW = panelW < 400 ? 40 : 61;
         int favoritesX = headerRight - filesW - 3 - headerSize;
         int enabledX = favoritesX - 3 - headerSize;
         addRenderableWidget(Button.builder(Component.literal("FILES"), b ->
@@ -183,6 +184,9 @@ public final class DashScreen extends Screen {
         addRenderableWidget(Button.builder(Component.literal("SET"), b ->
             minecraft.gui.setScreen(new DashSettingsScreen()))
             .bounds(enabledX - settingsW - 3, panelY + 6, settingsW, 21).build());
+        addRenderableWidget(Button.builder(Component.literal("PROFILES"), b ->
+            minecraft.gui.setScreen(new ClientProfilesScreen()))
+            .bounds(enabledX - settingsW - profilesW - 6, panelY + 6, profilesW, 21).build());
         favoritesFilterButton = addRenderableWidget(Button.builder(
             Component.literal("★"), b -> {
             favoritesOnly = !favoritesOnly;
@@ -248,7 +252,7 @@ public final class DashScreen extends Screen {
         enabledCount = 0;
         for (Module m : DashClient.MODULES) if (m.enabled()) enabledCount++;
         columns = contentW >= 280 ? 2 : 1;
-        int rowCount = Math.max(1, (panelY + panelH - 49 - top) / 27);
+        int rowCount = Math.max(1, (panelY + panelH - 49 - top) / 40);
         perPage = Math.max(1, columns * rowCount);
         pages = Math.max(1, (matches.size() + perPage - 1) / perPage);
         page = Math.min(page, pages - 1);
@@ -258,12 +262,12 @@ public final class DashScreen extends Screen {
             Module module = matches.get(i);
             int localIndex = i - page * perPage;
             int x = contentX + (localIndex % columns) * (buttonW + 5);
-            int y = top + (localIndex / columns) * 27;
-            tiles.add(new Tile(module, x, y, buttonW, 23));
-            String state = module.enabled() ? " +" : " -";
+            int y = top + (localIndex / columns) * 40;
+            tiles.add(new Tile(module, x, y, buttonW, 36));
+            String state = module.enabled() ? "  [ON]" : "  [OFF]";
             String icon = ModuleSymbols.symbol(module) + " ";
             String name = module.name();
-            while (!name.isEmpty() && font.width(icon + name + state) > buttonW - 30)
+            while (!name.isEmpty() && font.width(icon + name + state) > buttonW - 36)
                 name = name.substring(0, name.length() - 1);
             Button tileButton = Button.builder(Component.literal(icon + name + state), b -> {
                 lastInteractedModule = module;
@@ -279,14 +283,14 @@ public final class DashScreen extends Screen {
                 module.setEnabled(!module.enabled());
                 Config.save();
                 refreshCards();
-            }).bounds(x, y, buttonW - 21, 23).build();
+            }).bounds(x, y, buttonW - 26, 36).build();
             moduleButtons.add(addRenderableWidget(tileButton));
             Button favorite = Button.builder(Component.literal(
                 ModuleFavorites.contains(module) ? "★" : "☆"), b -> {
                 lastInteractedModule = module;
                 ModuleFavorites.toggle(module);
                 refreshCards();
-            }).bounds(x + buttonW - 20, y, 20, 23).build();
+            }).bounds(x + buttonW - 25, y, 25, 36).build();
             moduleButtons.add(addRenderableWidget(favorite));
         }
         refreshPageButtons();
@@ -338,12 +342,14 @@ public final class DashScreen extends Screen {
 
     @Override public void extractRenderState(GuiGraphicsExtractor g,
                                             int mouseX, int mouseY, float delta) {
-        g.fill(0, 0, width, height, 0x99030712);
-        g.fill(panelX - 1, panelY - 1, panelX + panelW + 1, panelY + panelH + 1, 0xFF32729F);
-        g.fill(panelX, panelY, panelX + panelW, panelY + panelH, 0xF00D1426);
-        g.fill(panelX + 3, panelY + 3, panelX + panelW - 3, panelY + 31, 0xFF142D44);
-        g.fill(panelX + 3, panelY + 30, panelX + panelW - 3, panelY + 32, 0xFF30749E);
-        g.fill(contentX - 5, panelY + 34, contentX - 3, panelY + panelH - 35, 0xFF32729F);
+        // Dash's own graphite / indigo palette; no third-party client assets.
+        g.fill(0, 0, width, height, 0xC206090F);
+        g.fill(panelX - 2, panelY - 2, panelX + panelW + 2, panelY + panelH + 2, 0xFF5367A0);
+        g.fill(panelX, panelY, panelX + panelW, panelY + panelH, 0xF2111520);
+        g.fill(panelX + 2, panelY + 2, panelX + panelW - 2, panelY + 32, 0xFF1B2337);
+        g.fill(panelX + 2, panelY + 31, panelX + panelW - 2, panelY + 33, 0xFF7589E9);
+        g.fill(panelX + 4, panelY + 36, contentX - 7, panelY + panelH - 35, 0xFF161D2C);
+        g.fill(contentX - 5, panelY + 34, contentX - 3, panelY + panelH - 35, 0xFF344260);
         super.extractRenderState(g, mouseX, mouseY, delta);
         // Draw subtle card borders and a hover accent without expensive blur.
         Module hovered = null;
@@ -352,28 +358,28 @@ public final class DashScreen extends Screen {
                     && mouseY >= tile.y && mouseY < tile.y + tile.height) {
                 hovered = tile.module;
                 g.fill(tile.x, tile.y, tile.x + tile.width, tile.y + 1,
-                    0xFF67CFFF);
+                    0xFF8EA6FF);
                 g.fill(tile.x, tile.y + tile.height - 1,
-                    tile.x + tile.width, tile.y + tile.height, 0xFF67CFFF);
+                    tile.x + tile.width, tile.y + tile.height, 0xFF8EA6FF);
             }
         }
         // Clear enabled/disabled accent rails make scanning a large module list easy.
         for (Tile tile : tiles) {
-            int accent = tile.module.enabled() ? 0xFF5DD9AB : 0xFF47556B;
+            int accent = tile.module.enabled() ? 0xFF38C992 : 0xFFB8516C;
             g.fill(tile.x + 1, tile.y + 3, tile.x + 3,
                 tile.y + tile.height - 3, accent);
         }
         int navSpacing = Math.max(13, Math.min(25, (panelH - 94) / TABS.length));
         g.fill(panelX + 5, panelY + 44 + selectedTab * navSpacing,
             panelX + 8, panelY + 44 + selectedTab * navSpacing +
-            Math.min(22, navSpacing - 1), 0xFF77E2FF);
+            Math.min(22, navSpacing - 1), 0xFF9FADFF);
         g.text(font, panelW > 410 ? "DASHCLIENT" : "DC",
-            panelX + 12, panelY + 12, 0xFF79DFFF, true);
+            panelX + 12, panelY + 12, 0xFFB7C5FF, true);
         if (panelW > 590)
             g.text(font, DashClient.MODULES.size() + " Modules | " + enabledCount + " On",
                 panelX + 117, panelY + 12, 0xFFEAF6FF, true);
         if (panelW > 590)
-            g.text(font, "v2.3", panelX + panelW - 202, panelY + 12,
+            g.text(font, "DASH UI", panelX + panelW - 202, panelY + 12,
                 0xFFA4BCD3, true);
         if (arrangeMode) {
             for (Tile tile : tiles) if (tile.module == selectedModule) {
