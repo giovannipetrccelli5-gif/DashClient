@@ -152,6 +152,7 @@ public final class DashClient implements ClientModInitializer {
             if(!configLoaded&&mc.options!=null){
                 ClientConfig.load();
                 Waypoints.load();
+                ServerProfiles.load();
                 configLoaded=true;
             }
             while(MENU_KEY.consumeClick()) {
@@ -161,6 +162,7 @@ public final class DashClient implements ClientModInitializer {
             while(EDIT_KEY.consumeClick()) {
                 if(mc.gui.screen()==null)mc.gui.setScreen(new HudEditor());
             }
+            ServerProfiles.tick(mc);
             LiveMetrics.tick(mc);
             setZoom(mc);
         });
