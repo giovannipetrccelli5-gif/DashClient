@@ -59,6 +59,9 @@ public final class DashSettingsScreen extends Screen {
             minecraft.gui.setScreen(new ClientImportsScreen()))
             .bounds(x+w-margin-Math.min(66,col), y+9, Math.min(66,col), 22).build());
 
+        addRenderableWidget(Button.builder(Component.literal("PROFILES"), b ->
+            minecraft.gui.setScreen(new ClientProfilesScreen()))
+            .bounds(x+w/2-42, y+9, 84, 22).build());
         String[] presets={"Performance Boost","Extreme FPS","Battery Saver","Vanilla"};
         int start=y+62;
         for(int i=0;i<presets.length;i++){
@@ -104,12 +107,12 @@ public final class DashSettingsScreen extends Screen {
 
     @Override public void extractRenderState(GuiGraphicsExtractor g,
                                             int mx,int my,float tick) {
-        g.fill(0,0,width,height,0xBB050A16);
-        g.fill(x-1,y-1,x+w+1,y+h+1,0xFF4088B6);
-        g.fill(x,y,x+w,y+h,0xF0142134);
-        g.fill(x+2,y+2,x+w-2,y+33,0xFF18354F);
+        g.fill(0,0,width,height,0xBF060910);
+        g.fill(x-1,y-1,x+w+1,y+h+1,0xFF566B9F);
+        g.fill(x,y,x+w,y+h,0xF0151926);
+        g.fill(x+2,y+2,x+w-2,y+33,0xFF222B42);
         super.extractRenderState(g,mx,my,tick);
-        g.centeredText(font,"DASHCLIENT  /  SETTINGS",x+w/2,y+17,0xFF83E4FF);
+        g.centeredText(font,"DASHCLIENT  /  SETTINGS",x+w/2,y+17,0xFFB7C5FF);
         g.centeredText(font,"GRAPHICS PROFILES",x+w/2,y+48,0xFFA6CADB);
         g.centeredText(font,"HUD & PERFORMANCE",x+w/2,y+126,0xFFA6CADB);
         if (minecraft.options != null) {
