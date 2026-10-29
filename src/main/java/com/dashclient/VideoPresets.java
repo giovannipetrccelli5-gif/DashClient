@@ -7,8 +7,9 @@ import net.minecraft.network.chat.Component;
 
 /** Transparent vanilla-setting presets; no unverifiable FPS claims. */
 public final class VideoPresets extends Screen {
-    private int x,y,w,h,view,sim,cap;
-    private boolean saved;
+    private int x,y,w,h;
+    private static int view,sim,cap;
+    private static boolean saved;
     private String status="Choose a preset or restore your own settings.";
     public VideoPresets(){super(Component.literal("DashClient Video Settings"));}
     private void use(String preset){
