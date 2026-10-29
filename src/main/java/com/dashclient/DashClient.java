@@ -45,7 +45,10 @@ public final class DashClient implements ClientModInitializer {
         f.enabled=!f.enabled;
         ClientConfig.save();
     }
-    public static boolean isHud(Feature f) { return f.category.equals("HUD"); }
+    /** HUD-capable categories; visual options are switches, not readouts. */
+    public static boolean isHud(Feature f) {
+        return !f.category.equals("Visual");
+    }
     public static String readout(Feature f,Minecraft mc) {
         if(mc.player==null)return "";
         return switch(f.id) {
@@ -72,7 +75,7 @@ public final class DashClient implements ClientModInitializer {
             case "session" -> "Playtime  "+((System.currentTimeMillis()-START)/60000)+"m";
             case "position" -> "Yaw  "+Math.round(mc.player.getYRot())+"  Pitch  "+Math.round(mc.player.getXRot());
             case "dimension" -> "Dimension  "+mc.player.level().dimension().toString();
-            default -> f.name;
+            default -> LiveMetrics.readout(f.id,mc);
         };
     }
     public static List<Feature> hudFeatures(){
@@ -105,6 +108,35 @@ public final class DashClient implements ClientModInitializer {
         add("session","Playtime","HUD","Time since Minecraft opened",false);
         add("position","Rotation","HUD","Yaw and pitch readout",false);
         add("dimension","Dimension","HUD","Current dimension",false);
+        add("cps","Left CPS","Combat","Mouse click presses per second",false);
+        add("right_cps","Right CPS","Combat","Right mouse click presses per second",false);
+        add("keys","Keystrokes","Combat","Live WASD key states",false);
+        add("sprinting","Sprint indicator","Movement","Shows whether you are sprinting",false);
+        add("sneaking","Sneak indicator","Movement","Shows whether you are sneaking",false);
+        add("hunger","Hunger","HUD","Food level out of 20",false);
+        add("armor","Armor points","Combat","Equipped armor protection points",false);
+        add("xp","Experience level","Survival","Experience level",false);
+        add("chunk","Chunk coordinates","World","Current chunk coordinates",false);
+        add("altitude","Altitude","World","Current Y coordinate",false);
+        add("block","Block below","World","Block standing beneath you",false);
+        add("biome","Biome","World","Current biome name",false);
+        add("weather","Weather","World","Current rain/clear conditions",false);
+        add("light","Light level","World","Light at your current position",false);
+        add("held","Held item","Survival","Main-hand item name",false);
+        add("offhand","Offhand item","Survival","Offhand item name",false);
+        add("held_count","Held stack size","Survival","Main-hand stack quantity",false);
+        add("durability","Held durability","Combat","Main-hand remaining durability",false);
+        add("totems","Totem counter","Combat","Totems in inventory",false);
+        add("arrows","Arrow counter","Combat","Regular arrows in inventory",false);
+        add("effects","Potion count","Combat","Number of active potion effects",false);
+        add("server","Current server","World","Current server or singleplayer",false);
+        add("playername","Username","HUD","Your Minecraft display name",false);
+        add("fps_average","Average FPS","Performance","Rolling sampled FPS average",false);
+        add("fps_low","Lowest FPS","Performance","Rolling sampled minimum FPS",false);
+        add("fps_high","Highest FPS","Performance","Rolling sampled maximum FPS",false);
+        add("memory_percent","Heap percentage","Performance","Minecraft memory utilization",false);
+        add("nethercoords","Portal coordinates","World","Nether/Overworld coordinate conversion",false);
+        add("waypoint","Nearest waypoint","World","Distance to nearest saved waypoint",false);
         add("zoom","Zoom","Visual","Hold C to zoom your view",true);
         add("background","HUD backgrounds","Visual","Show translucent HUD backgrounds",true);
         add("compact","Compact HUD","Visual","Use tighter HUD spacing",false);
@@ -119,6 +151,8 @@ public final class DashClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(mc->{
             if(!configLoaded&&mc.options!=null){
                 ClientConfig.load();
+                Waypoints.load();
+                ServerProfiles.load();
                 configLoaded=true;
             }
             while(MENU_KEY.consumeClick()) {
@@ -128,6 +162,8 @@ public final class DashClient implements ClientModInitializer {
             while(EDIT_KEY.consumeClick()) {
                 if(mc.gui.screen()==null)mc.gui.setScreen(new HudEditor());
             }
+            ServerProfiles.tick(mc);
+            LiveMetrics.tick(mc);
             setZoom(mc);
         });
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("dashclient","hud"),

@@ -11,9 +11,9 @@ import java.util.Locale;
 
 /** New DashClient interface. Drawn from scratch; no Lunar Client code or assets. */
 public final class ClientMenu extends Screen {
-    private static final String[] CATEGORIES={"All","HUD","Visual"};
+    private static final String[] CATEGORIES={"All","HUD","Combat","Survival","World","Movement","Performance","Visual"};
     private int tab=0, page=0, pages=1;
-    private String query="", status="Click a module to toggle it. Right Shift closes this menu.";
+    private String query="", status="Change mods, then drag HUD elements into place.";
     private int x,y,w,h,contentX,contentW,top;
     private EditBox search;
     private boolean refreshPending;
@@ -30,13 +30,17 @@ public final class ClientMenu extends Screen {
         contentW=w-sidebar-21;
         top=y+76;
 
+        int tabGap=Math.max(18,Math.min(32,(h-145)/CATEGORIES.length));
         for(int i=0;i<CATEGORIES.length;i++){
             final int idx=i;
             addRenderableWidget(Button.builder(Component.literal(
                 (i==tab?"[ ":"  ")+CATEGORIES[i]+(i==tab?" ]":"")),b->{
                 tab=idx;page=0;refreshCards();
-            }).bounds(x+8,y+72+i*34,sidebar-10,28).build());
+            }).bounds(x+8,y+72+i*tabGap,sidebar-10,Math.max(16,tabGap-3)).build());
         }
+        addRenderableWidget(Button.builder(Component.literal("WAYPOINTS"),b->
+            minecraft.gui.setScreen(new WaypointsScreen())
+        ).bounds(x+8,y+h-62,sidebar-10,23).build());
         int actionW=Math.max(37,Math.min(82,(contentW-12)/3));
         addRenderableWidget(Button.builder(Component.literal("HUD EDIT"),b->
             minecraft.gui.setScreen(new HudEditor())

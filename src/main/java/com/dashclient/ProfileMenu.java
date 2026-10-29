@@ -21,6 +21,12 @@ public final class ProfileMenu extends Screen {
                 minecraft.gui.setScreen(new ProfileMenu());
             }).bounds(x+12+(i%2)*(col+8),y+72+(i/2)*39,col,32).build());
         }
+        addRenderableWidget(Button.builder(Component.literal("Bind this profile to server"),b->{
+            if(ServerProfiles.bindCurrent(minecraft))minecraft.gui.setScreen(new ProfileMenu());
+        }).bounds(x+12,y+h-93,w-24,24).build());
+        addRenderableWidget(Button.builder(Component.literal("Remove server binding"),b->{
+            if(ServerProfiles.unbindCurrent(minecraft))minecraft.gui.setScreen(new ProfileMenu());
+        }).bounds(x+12,y+h-65,w-24,24).build());
         addRenderableWidget(Button.builder(Component.literal("Back to Mods"),b->
             minecraft.gui.setScreen(new ClientMenu())
         ).bounds(x+12,y+h-37,w-24,24).build());
@@ -34,6 +40,9 @@ public final class ProfileMenu extends Screen {
         super.extractRenderState(g,mx,my,delta);
         g.centeredText(font,"DASHCLIENT / PROFILES",x+w/2,y+16,0xFFC1D0FF);
         g.centeredText(font,"Switch independent module setups",x+w/2,y+52,0xFFE1E6F0);
-        g.centeredText(font,"Changes are saved automatically",x+w/2,y+h-65,0xFF99B3D1);
+        g.centeredText(font,"Changes save automatically",x+w/2,y+h-106,0xFF99B3D1);
+        String binding=ServerProfiles.assigned(minecraft);
+        while(!binding.isEmpty()&&font.width(binding)>w-24)binding=binding.substring(0,binding.length()-1);
+        g.centeredText(font,"Current server: "+binding,x+w/2,y+h-122,0xFF9FB2DD);
     }
 }
