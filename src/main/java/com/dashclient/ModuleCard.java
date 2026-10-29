@@ -32,7 +32,7 @@ public final class ModuleCard {
 
         String label=DashTheme.fit(font,feature.name,Math.max(26,w-104));
         g.text(font,label,x+43,y+10,DashTheme.TEXT,true);
-        String description=DashTheme.fit(font,feature.description,Math.max(24,w-55));
+        String description=DashTheme.fit(font,feature.description,Math.max(24,w-98));
         g.text(font,description,x+43,y+25,DashTheme.MUTED,false);
 
         DashTheme.switcher(g,x+w-46,y+10,feature.enabled);
