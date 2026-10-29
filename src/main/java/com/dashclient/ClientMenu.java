@@ -234,7 +234,7 @@ public final class ClientMenu extends Screen {
         if(w>=760){
             String state=ClientConfig.active.toUpperCase(Locale.ROOT)+" PROFILE  /  "
                 +DashTheme.fit(font,status,190);
-            g.text(font,state,x+sidebar+12,y+h-44,DashTheme.MUTED,false);
+            g.text(font,state,bodyX,y+27,DashTheme.MUTED,false);
         }
     }
     private static String shortCategory(int index){
