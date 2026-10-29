@@ -1,71 +1,116 @@
 package com.dashclient;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import java.util.List;
 
-/** Add, browse and delete local waypoints with a GUI, including on touch devices. */
+/** Locally saved waypoint manager, built in the DashClient v3 visual language. */
 public final class WaypointsScreen extends Screen {
     private int x,y,w,h,page;
-    private String message="Save locations to see your closest waypoint on the HUD.";
+    private String status="Your waypoint coordinates are stored locally.";
     private EditBox nameBox;
     public WaypointsScreen(){super(Component.literal("DashClient Waypoints"));}
-    @Override protected void init(){
-        w=Math.min(width-12,540);h=Math.min(height-12,390);
-        x=(width-w)/2;y=(height-h)/2;
-        int pad=12;
-        nameBox=new EditBox(font,x+pad,y+48,w-pad*2-94,23,Component.literal("Waypoint name"));
-        nameBox.setHint(Component.literal("New waypoint name..."));
-        addRenderableWidget(nameBox);
-        addRenderableWidget(Button.builder(Component.literal("ADD HERE"),b->{
-            if(minecraft.player==null){message="Join a world to create a waypoint.";return;}
-            String name=nameBox.getValue();
-            if(Waypoints.add(minecraft,name)){
-                message="Waypoint saved in current dimension.";
-                minecraft.gui.setScreen(new WaypointsScreen());
-            }else message="Maximum 24 waypoints, or world not loaded.";
-        }).bounds(x+w-88,y+48,76,23).build());
 
-        List<Waypoints.Point> all=Waypoints.list();
-        int maxRows=Math.max(1,(h-150)/29);
-        int pages=Math.max(1,(all.size()+maxRows-1)/maxRows);
-        page=Math.min(page,pages-1);
-        for(int i=page*maxRows;i<Math.min(all.size(),(page+1)*maxRows);i++){
-            final int idx=i;
-            var p=all.get(i);
-            String name=p.name()+"  "+p.x()+", "+p.y()+", "+p.z();
-            while(!name.isEmpty()&&font.width(name)>w-130)name=name.substring(0,name.length()-1);
-            addRenderableWidget(Button.builder(Component.literal(name),b->{
-                message="Saved location: "+p.dimension();
-            }).bounds(x+pad,y+86+(i-page*maxRows)*29,w-114,24).build());
-            addRenderableWidget(Button.builder(Component.literal("DELETE"),b->{
-                Waypoints.remove(idx);
-                minecraft.gui.setScreen(new WaypointsScreen());
-            }).bounds(x+w-96,y+86+(i-page*maxRows)*29,84,24).build());
+    @Override protected void init(){
+        w=Math.min(width-12,650);h=Math.min(height-12,400);
+        x=(width-w)/2;y=(height-h)/2;
+        nameBox=new EditBox(font,x+18,y+50,Math.max(32,w-123),20,
+            Component.literal("New waypoint name"));
+        nameBox.setHint(Component.literal("Enter waypoint name..."));
+        addRenderableWidget(nameBox);
+    }
+    private int rowCount(){return Math.max(1,(h-151)/32);}
+    private int pageCount(){
+        return Math.max(1,(Waypoints.list().size()+rowCount()-1)/rowCount());
+    }
+    private static boolean hit(double mx,double my,int bx,int by,int bw,int bh){
+        return mx>=bx&&mx<bx+bw&&my>=by&&my<by+bh;
+    }
+    @Override public boolean mouseClicked(MouseButtonEvent e,boolean doubleClick){
+        if(super.mouseClicked(e,doubleClick))return true;
+        if(e.button()!=0)return false;
+        double mx=e.x(),my=e.y();
+        if(hit(mx,my,x+w-97,y+48,84,25)){
+            if(Waypoints.add(minecraft,nameBox.getValue())){
+                nameBox.setValue("");
+                page=Math.max(0,pageCount()-1);
+                status="Waypoint saved in your current dimension.";
+            }else status="Join a world or delete some of the 24 saved waypoints.";
+            return true;
         }
-        addRenderableWidget(Button.builder(Component.literal("<"),b->{
-            if(page>0){page--;minecraft.gui.setScreen(this);}
-        }).bounds(x+12,y+h-65,45,23).build());
-        addRenderableWidget(Button.builder(Component.literal(">"),b->{
-            if(page+1<pages){page++;minecraft.gui.setScreen(this);}
-        }).bounds(x+63,y+h-65,45,23).build());
-        addRenderableWidget(Button.builder(Component.literal("Back to mods"),b->
-            minecraft.gui.setScreen(new ClientMenu())
-        ).bounds(x+12,y+h-35,w-24,24).build());
+        List<Waypoints.Point> points=Waypoints.list();
+        int perPage=rowCount();
+        page=Math.min(page,pageCount()-1);
+        for(int i=page*perPage;i<Math.min(points.size(),(page+1)*perPage);i++){
+            int ry=y+85+(i-page*perPage)*32;
+            if(hit(mx,my,x+w-88,ry,74,26)){
+                Waypoints.remove(i);
+                page=Math.min(page,pageCount()-1);
+                status="Waypoint removed.";
+                return true;
+            }
+            if(hit(mx,my,x+14,ry,w-110,26)){
+                var point=points.get(i);
+                status=point.name()+" - "+point.dimension();
+                return true;
+            }
+        }
+        int fy=y+h-67;
+        if(hit(mx,my,x+14,fy,46,23)){
+            page=Math.max(0,page-1);return true;
+        }
+        if(hit(mx,my,x+66,fy,46,23)){
+            page=Math.min(pageCount()-1,page+1);return true;
+        }
+        if(hit(mx,my,x+14,y+h-36,w-28,25)){
+            minecraft.gui.setScreen(new ClientMenu());return true;
+        }
+        return false;
     }
     @Override public void onClose(){minecraft.gui.setScreen(new ClientMenu());}
     @Override public void extractRenderState(GuiGraphicsExtractor g,int mx,int my,float tick){
-        g.fill(0,0,width,height,0xC4080C15);
-        g.fill(x-1,y-1,x+w+1,y+h+1,0xFF748FDA);
-        g.fill(x,y,x+w,y+h,0xF0151D2C);
-        g.fill(x+2,y+2,x+w-2,y+34,0xFF253653);
+        g.fill(0,0,width,height,DashTheme.BACKDROP);
+        DashTheme.rounded(g,x,y,w,h,DashTheme.FRAME);
+        DashTheme.rounded(g,x+4,y+4,w-8,35,DashTheme.PANEL);
+        DashTheme.line(g,x+10,y+40,w-20,DashTheme.ACCENT);
+        DashTheme.rounded(g,x+13,y+46,w-26,29,0xFF202C40);
         super.extractRenderState(g,mx,my,tick);
-        g.centeredText(font,"DASHCLIENT / WAYPOINTS",x+w/2,y+15,0xFFBFD0FF);
-        String line=message;
-        while(!line.isEmpty()&&font.width(line)>w-25)line=line.substring(0,line.length()-1);
-        g.centeredText(font,line,x+w/2,y+h-78,0xFFA7B6D4);
+        g.text(font,"WAYPOINTS",x+16,y+16,DashTheme.TEXT,true);
+        int total=Waypoints.list().size();
+        g.text(font,total+" / 24 SAVED",x+w-100,y+17,DashTheme.BRIGHT,false);
+        DashTheme.button(g,x+w-97,y+48,84,25,"ADD HERE",font,
+            hit(mx,my,x+w-97,y+48,84,25),true);
+        int perPage=rowCount();
+        page=Math.min(page,pageCount()-1);
+        List<Waypoints.Point> all=Waypoints.list();
+        for(int i=page*perPage;i<Math.min(total,(page+1)*perPage);i++){
+            Waypoints.Point p=all.get(i);
+            int ry=y+85+(i-page*perPage)*32;
+            DashTheme.rounded(g,x+14,ry,w-28,26,DashTheme.CARD);
+            String coords=p.x()+", "+p.y()+", "+p.z();
+            String label=DashTheme.fit(font,p.name(),Math.max(30,w-210));
+            g.text(font,label,x+25,ry+9,DashTheme.TEXT,true);
+            if(w>=340)
+                g.text(font,DashTheme.fit(font,coords,125),x+w-205,ry+9,
+                    DashTheme.MUTED,false);
+            DashTheme.button(g,x+w-88,ry,74,26,"REMOVE",font,
+                hit(mx,my,x+w-88,ry,74,26),false);
+        }
+        if(total==0)
+            g.centeredText(font,"No waypoints yet. Add one at your current location.",
+                x+w/2,y+101,DashTheme.MUTED);
+        int fy=y+h-67;
+        DashTheme.button(g,x+14,fy,46,23,"< PREV",font,
+            hit(mx,my,x+14,fy,46,23),false);
+        DashTheme.button(g,x+66,fy,46,23,"NEXT >",font,
+            hit(mx,my,x+66,fy,46,23),false);
+        g.text(font,(page+1)+" / "+pageCount(),x+122,fy+8,DashTheme.MUTED,false);
+        String line=DashTheme.fit(font,status,w-28);
+        g.text(font,line,x+14,y+h-84,DashTheme.MUTED,false);
+        DashTheme.button(g,x+14,y+h-36,w-28,25,"BACK TO MODS",font,
+            hit(mx,my,x+14,y+h-36,w-28,25),false);
     }
 }
