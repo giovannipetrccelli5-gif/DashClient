@@ -21,7 +21,7 @@ public final class ProfileMenu extends Screen {
     @Override public boolean mouseClicked(MouseButtonEvent e,boolean doubleClick){
         if(e.button()!=0)return super.mouseClicked(e,doubleClick);
         double mx=e.x(),my=e.y();
-        int gap=9,cardW=(w-35)/2,cardH=Math.min(46,Math.max(30,(h-139)/2));
+        int gap=9,cardW=(w-35)/2,cardH=Math.min(46,Math.max(29,(h-171)/2));
         for(int i=0;i<ClientConfig.PROFILES.length;i++){
             int bx=x+13+(i%2)*(cardW+gap),by=y+65+(i/2)*(cardH+7);
             if(hit(mx,my,bx,by,cardW,cardH)){
@@ -56,7 +56,7 @@ public final class ProfileMenu extends Screen {
         super.extractRenderState(g,mx,my,delta);
         g.text(font,"PROFILES",x+16,y+16,DashTheme.TEXT,true);
         g.text(font,DashTheme.fit(font,note,w-28),x+14,y+47,DashTheme.MUTED,false);
-        int gap=9,cardW=(w-35)/2,cardH=Math.min(46,Math.max(30,(h-139)/2));
+        int gap=9,cardW=(w-35)/2,cardH=Math.min(46,Math.max(29,(h-171)/2));
         for(int i=0;i<ClientConfig.PROFILES.length;i++){
             String profile=ClientConfig.PROFILES[i];
             boolean active=ClientConfig.active.equals(profile);
