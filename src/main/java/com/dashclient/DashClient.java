@@ -176,6 +176,7 @@ public final class DashClient implements ClientModInitializer {
             // Extended View both access those options in onEnable()).
             if (!configLoaded && client.options != null) {
                 Config.load();
+                ClientProfiles.load();
                 configLoaded = true;
             }
             AdvancedHudPack.sample(client);
