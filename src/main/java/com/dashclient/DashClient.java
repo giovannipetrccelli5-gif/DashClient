@@ -71,7 +71,7 @@ public final class DashClient implements ClientModInitializer {
             case "speed" -> "Speed  "+String.format(java.util.Locale.ROOT,"%.1f",mc.player.getDeltaMovement().horizontalDistance()*20)+" b/s";
             case "session" -> "Playtime  "+((System.currentTimeMillis()-START)/60000)+"m";
             case "position" -> "Yaw  "+Math.round(mc.player.getYRot())+"  Pitch  "+Math.round(mc.player.getXRot());
-            case "dimension" -> "Dimension  "+mc.player.level().dimension().location().getPath();
+            case "dimension" -> "Dimension  "+mc.player.level().dimension().toString();
             default -> f.name;
         };
     }
