@@ -1,5 +1,16 @@
-# DashClient 2.0
-An original client-side **Fabric Minecraft mod** with an all-new dark client menu and optional HUD widgets.
+# DashClient 2.0 — Modern GUI Edition
+An original client-side **Fabric Minecraft mod** with a complete DashClient v3 user-interface overhaul, custom-drawn cards, toggles, and configurable HUD widgets.
+
+## New custom GUI
+- **Right Shift** opens the redesigned client settings.
+- All visible module cards are drawn as original Minecraft-native panels instead of vanilla menu buttons.
+- Left sidebar categories: All, HUD, Combat, Survival, World, Movement, Performance, Visual.
+- Live module search, responsive page navigation, module selection and live ON/OFF toggles.
+- On wider screens the details pane displays module information and a second working toggle.
+- Shortcuts: HUD opens the draggable editor, Waypoints opens the local location manager, Profiles switches independent configurations, and Video changes vanilla settings.
+- Styled profiles, waypoint manager, performance presets, and an alignment-grid HUD editor. GUI adapts to smaller Minecraft GUI scales.
+- Accessible editable search remains a native Minecraft text input.
+
 
 ## Original modules removed
 This release intentionally replaces the legacy DashClient code and old 143+ module collection rather than migrating them. No old automation, x-ray, or experimental world modification code is bundled. The previous project is recoverable on the `legacy-dashclient-v1` branch.
