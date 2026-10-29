@@ -33,7 +33,8 @@ processResources {
         expand(
             "version": project.version,
             "minecraft_version": project.minecraft_version,
-            "fabric_api_version": project.fabric_api_version
+            "fabric_api_version": project.fabric_api_version,
+            "java_version": (project.minecraft_version == '1.21.11' ? 21 : 25)
         )
     }
 }

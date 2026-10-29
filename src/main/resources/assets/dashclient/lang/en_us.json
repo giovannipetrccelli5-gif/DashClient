@@ -1,13 +1,6 @@
 {
-  "key.category.dashclient.controls": "DashClient",
-  "key.dashclient.menu": "Open DashClient Menu",
-  "key.dashclient.zoom": "DashClient Zoom (C)",
-  "key.dashclient.zoom_alternate": "DashClient Zoom Alternative (Z)",
-  "key.dashclient.edit_hud": "Edit DashClient HUD",
-  "key.dashclient.clean_hud": "Toggle DashClient Clean Screenshot HUD",
-  "key.dashclient.auto_clicker": "Toggle DashClient Auto Clicker",
-  "key.dashclient.xray": "Toggle DashClient X-Ray",
-  "key.dashclient.village_finder": "Toggle DashClient Village Finder",
-  "key.dashclient.freecam": "Toggle DashClient Freecam",
-  "key.dashclient.auto_miner": "Toggle DashClient Auto Miner (F7)"
+  "key.category.dashclient.controls":"DashClient",
+  "key.dashclient.menu":"Open DashClient",
+  "key.dashclient.zoom":"DashClient Zoom",
+  "key.dashclient.hud":"DashClient HUD Editor"
 }

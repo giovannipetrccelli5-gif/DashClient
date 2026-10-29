@@ -3,20 +3,13 @@
   "id": "dashclient",
   "version": "${version}",
   "name": "DashClient",
-  "description": "Client-side Minecraft HUD, utility and performance modules.",
+  "description": "A fresh independent Minecraft client HUD and module experience.",
   "environment": "client",
-  "mixins": [
-    "dashclient.mixins.json"
-  ],
-  "entrypoints": {
-    "client": [
-      "com.dashclient.DashClient"
-    ]
-  },
+  "entrypoints": {"client": ["com.dashclient.DashClient"]},
   "depends": {
     "fabricloader": ">=0.19.5",
     "minecraft": "${minecraft_version}",
-    "java": ">=25",
+    "java": ">=${java_version}",
     "fabric-api": ">=${fabric_api_version}"
   }
 }

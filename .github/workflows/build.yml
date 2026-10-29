@@ -1,21 +1,17 @@
-name: Build DashClient
+name: DashClient 2 clean rebuild
 on:
   push:
   pull_request:
   workflow_dispatch:
-
-# Avoid older runs overwriting a newer development JAR.
 concurrency:
-  group: dashclient-${{ github.ref }}
+  group: dashclient-rebuild-${{ github.ref }}
   cancel-in-progress: true
-
 permissions:
   contents: write
-
 jobs:
-  build:
+  matrix-build:
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -25,11 +21,11 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: current
-      - name: Build and run tests for all stable versions since 1.21.11
+      - name: Compile all six Minecraft editions
+        shell: bash
         run: |
           set -euo pipefail
           mkdir -p dist
-          # Oldest API first; test each against its own Minecraft remapped JAR.
           for mc in 1.21.11 26.1 26.1.1 26.1.2 26.2 26.3; do
             case "$mc" in
               1.21.11) api='0.141.6+1.21.11' ;;
@@ -39,115 +35,37 @@ jobs:
               26.2) api='0.161.0+26.2' ;;
               26.3) api='0.160.5+26.3' ;;
             esac
-            echo "::group::Minecraft $mc / Fabric API $api"
-            # Restore clean sources between targets; legacy API changes must not
-            # leak into the modern 26.2/26.3 build.
             git restore -- src/main/java build.gradle
             case "$mc" in
               1.21.11|26.1|26.1.1|26.1.2) python3 scripts/prepare_legacy_build.py "$mc" ;;
             esac
             gradle clean build --no-daemon -Pminecraft_version="$mc" -Pfabric_api_version="$api"
-            cp build/libs/dashclient-1.0.0.jar "dist/dashclient-1.0.0-mc$mc.jar"
-            echo "::endgroup::"
+            cp build/libs/dashclient-2.0.0.jar "dist/dashclient-2.0.0-mc$mc.jar"
           done
-      - name: Audit module names and config keys
+      - name: Validate versions and create ZIP downloads
         run: |
           python3 - <<'PY'
+          import json, zipfile
           from pathlib import Path
-          import re, collections
-          roots=Path('src/main/java/com/dashclient/modules')
-          patterns=[
-              r'\bsuper\("([^"]+)"\)',
-              r'\b(?:add|style|item)\(list,\s*"([^"]+)"',
-              r'\b(?:add|hud)\(modules,\s*"([^"]+)"',
-              r'\binfo\(out,\s*"([^"]+)"',
-              r'\bnew Module\("([^"]+)"',
-          ]
-          names=[]
-          for file in roots.glob('*.java'):
-              src=file.read_text(encoding='utf-8')
-              for pattern in patterns:
-                  for name in re.findall(pattern, src):
-                      key=name.lower().replace(' ', '_').replace('/', '_')
-                      names.append((key,name,file.name))
-          grouped=collections.defaultdict(list)
-          for key,name,file in names:
-              grouped[key].append((name,file))
-          collisions={key:values for key,values in grouped.items() if len(values)>1}
-          assert len(names)>=250, f'Audit extracted too few module names: {len(names)}'
-          assert not collisions, f'Duplicate module preference keys: {collisions}'
-          assert all(0<len(name)<=120 for _,name,_ in names)
-          print(f'Audited {len(names)} module identifiers: no duplicate preference keys')
-          PY
-      - name: Validate all built JARs and exact Minecraft dependencies
-        run: |
-          python3 - <<'PY'
-          import json, pathlib, zipfile
-          expected = {
-              '1.21.11': '0.141.6+1.21.11',
-              '26.1': '0.145.1+26.1',
-              '26.1.1': '0.145.4+26.1.1',
-              '26.1.2': '0.155.3+26.1.2',
-              '26.2': '0.161.0+26.2',
-              '26.3': '0.160.5+26.3',
-          }
-          for mc, api in expected.items():
-              jar_path = pathlib.Path(f'dist/dashclient-1.0.0-mc{mc}.jar')
-              assert jar_path.is_file(), f'Missing build: {jar_path}'
-              with zipfile.ZipFile(jar_path) as jar:
-                  names = set(jar.namelist())
-                  manifest = json.loads(jar.read('fabric.mod.json'))
-                  assert manifest['id'] == 'dashclient'
-                  assert manifest['depends']['minecraft'] == mc, (jar_path, manifest)
-                  assert manifest['depends']['fabric-api'] == '>=' + api, (jar_path, manifest)
-                  assert 'com/dashclient/DashClient.class' in names
-                  for name in ('InventoryPack', 'WorldPack', 'StatusPack',
-                               'AdvancedHudPack', 'PerformanceModule',
-                               'AdaptiveFpsModule', 'AdaptiveDistancePolicy',
-                               'CombatVisualPack', 'AutoTotemModule',
-                               'AutoElytraModule', 'ElytraFinderModule',
-                               'ExpandedModulePack', 'AutoClickerModule', 'OreXrayModule',
-                               'VillageFinderModule', 'FreecamModule', 'AutoMinerModule',
-                               'DeviceHealthPack', 'UtilityModulePack',
-                               'QualityOfLifePack'):
-                      assert f'com/dashclient/modules/{name}.class' in names, name
-                  for name in ('ClientFileInbox', 'ClientImportsScreen', 'DashScreen',
-                               'DashSettingsScreen', 'ModuleHelp', 'AutoMinerScreen'):
-                      assert f'com/dashclient/{name}.class' in names, name
-                  assert 'dashclient.mixins.json' in names
-                  for name in ('FreecamLookMixin', 'FreecamInteractionMixin'):
-                      assert f'com/dashclient/mixin/{name}.class' in names
-              print(f'Minecraft {mc}: metadata and JAR contents validated: {jar_path}')
-          PY
-      # Upload only when explicitly enabled: GitHub reports this account's artifact quota is full.
-      # Optional repository Actions variable: DASHCLIENT_UPLOAD_ARTIFACT=true
-      - name: Upload GitHub Actions artifact
-        if: vars.DASHCLIENT_UPLOAD_ARTIFACT == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: DashClient-all-supported-versions
-          path: dist/*.jar
-          if-no-files-found: error
-      - name: Create Android-friendly ZIP downloads for every version
-        run: |
-          python3 - <<'PY'
-          import pathlib, zipfile, shutil
-          dist = pathlib.Path('dist')
-          for mc in ('1.21.11', '26.1', '26.1.1', '26.1.2', '26.2', '26.3'):
-              jar = dist / f'dashclient-1.0.0-mc{mc}.jar'
-              zip_path = dist / f'DashClient-Phone-Download-mc{mc}.zip'
-              with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as z:
-                  z.write(jar, arcname=jar.name)
-              with zipfile.ZipFile(zip_path) as z:
+          versions=('1.21.11','26.1','26.1.1','26.1.2','26.2','26.3')
+          for version in versions:
+              jar=Path('dist')/f'dashclient-2.0.0-mc{version}.jar'
+              assert jar.is_file(),jar
+              with zipfile.ZipFile(jar) as z:
+                  meta=json.loads(z.read('fabric.mod.json'))
+                  assert meta['version']=='2.0.0',meta
+                  assert meta['depends']['minecraft']==version,meta
+                  assert 'com/dashclient/DashClient.class' in z.namelist()
+                  assert 'com/dashclient/ClientMenu.class' in z.namelist()
+                  assert 'com/dashclient/HudEditor.class' in z.namelist()
+              output=Path('dist')/f'DashClient-2.0.0-mc{version}.zip'
+              with zipfile.ZipFile(output,'w',zipfile.ZIP_DEFLATED) as z:
+                  z.write(jar,jar.name)
+              with zipfile.ZipFile(output) as z:
                   assert z.testzip() is None
-                  assert z.namelist() == [jar.name]
-          # Preserve existing legacy download URLs, pointing to 26.3.
-          shutil.copyfile(dist / 'dashclient-1.0.0-mc26.3.jar',
-                          dist / 'dashclient-1.0.0.jar')
-          shutil.copyfile(dist / 'DashClient-Phone-Download-mc26.3.zip',
-                          dist / 'DashClient-Phone-Download.zip')
+          print('All six versions compiled and validated.')
           PY
-      - name: Publish jar and ZIP to GitHub Releases
+      - name: Publish downloads on main
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -155,5 +73,5 @@ jobs:
           if gh release view dev-build >/dev/null 2>&1; then
             gh release upload dev-build dist/* --clobber
           else
-            gh release create dev-build dist/* --target "$GITHUB_SHA" --title "DashClient development build" --prerelease --notes "Fabric DashClient for Minecraft 1.21.11, 26.1, 26.1.1, 26.1.2, 26.2 and 26.3. Install only the JAR matching your version."
+            gh release create dev-build dist/* --target "$GITHUB_SHA" --title "DashClient 2 development builds" --prerelease --notes "Independent DashClient v2. Install only the JAR or ZIP for your exact Minecraft version."
           fi

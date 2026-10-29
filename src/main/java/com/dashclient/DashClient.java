@@ -1,6 +1,5 @@
 package com.dashclient;
 
-import com.dashclient.modules.*;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -8,320 +7,147 @@ import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.resources.Identifier;
-import net.minecraft.network.chat.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Collections;
 
+/**
+ * DashClient 2.0, a fully new Fabric client implementation.
+ * Not affiliated with or copied from Lunar Client.
+ */
 public final class DashClient implements ClientModInitializer {
-    public static final Logger LOGGER = LoggerFactory.getLogger("DashClient");
-    public static final List<Module> MODULES = new ArrayList<>();
-    private static Map<String,Module> MODULE_LOOKUP = Map.of();
-    public static KeyMapping MENU_KEY;
-    public static KeyMapping ZOOM_KEY;
-    public static KeyMapping ZOOM_ALTERNATE_KEY;
-    public static KeyMapping AUTO_CLICKER_KEY;
-    public static KeyMapping XRAY_KEY;
-    public static KeyMapping FREECAM_KEY;
-    public static KeyMapping AUTO_MINER_KEY;
-    public static KeyMapping VILLAGE_FINDER_KEY;
-    public static KeyMapping EDIT_HUD_KEY;
-    public static KeyMapping CLEAN_HUD_KEY;
-    private static final OreXrayModule XRAY = new OreXrayModule();
-    private static final FreecamModule FREECAM = new FreecamModule();
-    private static final AutoMinerModule MINER = new AutoMinerModule();
-    private boolean configLoaded;
+    public static final Logger LOGGER=LoggerFactory.getLogger("DashClient");
+    public static final List<Feature> FEATURES=new ArrayList<>();
+    public static KeyMapping MENU_KEY, ZOOM_KEY, EDIT_KEY;
+    private static boolean configLoaded;
+    private static Integer originalFov;
+    private static final long START=System.currentTimeMillis();
 
-    /** Mojang renamed KEYSYM to KEYBOARD between 26.2 and 26.3.
-     * Avoid linking a version-specific enum constant in compiled bytecode.
-     */
-    private static InputConstants.Type keyboardType() {
-        try {
-            return InputConstants.Type.valueOf("KEYBOARD");
-        } catch (IllegalArgumentException ignored) {
-            return InputConstants.Type.valueOf("KEYSYM");
+    private static InputConstants.Type keyboardType(){
+        try{return InputConstants.Type.valueOf("KEYBOARD");}
+        catch(IllegalArgumentException ignored){return InputConstants.Type.valueOf("KEYSYM");}
+    }
+    private static void add(String id,String title,String category,String description,boolean on){
+        FEATURES.add(new Feature(id,title,category,description,on));
+    }
+    public static Feature feature(String id) {
+        for(Feature f:FEATURES) if(f.id.equals(id))return f;
+        return null;
+    }
+    public static boolean enabled(String id){
+        Feature f=feature(id);
+        return f!=null&&f.enabled;
+    }
+    public static void toggle(Feature f){
+        f.enabled=!f.enabled;
+        ClientConfig.save();
+    }
+    public static boolean isHud(Feature f) { return f.category.equals("HUD"); }
+    public static String readout(Feature f,Minecraft mc) {
+        if(mc.player==null)return "";
+        return switch(f.id) {
+            case "fps" -> "FPS  "+mc.getFps();
+            case "coords" -> "XYZ  "+mc.player.blockPosition().getX()+"  "
+                +mc.player.blockPosition().getY()+"  "+mc.player.blockPosition().getZ();
+            case "direction" -> {
+                int quarter=Math.floorMod(Math.round(mc.player.getYRot()/90),4);
+                yield "Facing  "+new String[]{"South","West","North","East"}[quarter];
+            }
+            case "health" -> "Health  "+Math.round(mc.player.getHealth())+" HP";
+            case "ping" -> {
+                var connection=mc.getConnection();
+                var info=connection==null?null:connection.getPlayerInfo(mc.player.getUUID());
+                yield "Ping  "+(info==null?"--":info.getLatency()+" ms");
+            }
+            case "time" -> "World Time  "+(mc.level==null?0:mc.level.getDayTime()%24000);
+            case "memory" -> {
+                Runtime rt=Runtime.getRuntime();
+                yield "RAM  "+((rt.totalMemory()-rt.freeMemory())/(1024*1024))+" MB";
+            }
+            case "clock" -> "Clock  "+java.time.LocalTime.now().toString().substring(0,5);
+            case "speed" -> "Speed  "+String.format(java.util.Locale.ROOT,"%.1f",mc.player.getDeltaMovement().horizontalDistance()*20)+" b/s";
+            case "session" -> "Playtime  "+((System.currentTimeMillis()-START)/60000)+"m";
+            case "position" -> "Yaw  "+Math.round(mc.player.getYRot())+"  Pitch  "+Math.round(mc.player.getXRot());
+            case "dimension" -> "Dimension  "+mc.player.level().dimension().location().getPath();
+            default -> f.name;
+        };
+    }
+    public static List<Feature> hudFeatures(){
+        List<Feature> result=new ArrayList<>();
+        for(Feature f:FEATURES) if(isHud(f)&&f.enabled) result.add(f);
+        return result;
+    }
+    private static void setZoom(Minecraft mc){
+        if(mc.options==null)return;
+        boolean zoom=enabled("zoom")&&mc.gui.screen()==null&&ZOOM_KEY.isDown();
+        if(zoom){
+            if(originalFov==null)originalFov=mc.options.fov().get();
+            mc.options.fov().set(30);
+        }else if(originalFov!=null){
+            mc.options.fov().set(originalFov);
+            originalFov=null;
         }
     }
-
-    public static boolean isEnabled(String name) {
-        Module module = MODULE_LOOKUP.get(name);
-        return module != null && module.enabled();
+    @Override public void onInitializeClient() {
+        // Readable modules only; legacy exploit/automation features are not bundled.
+        add("fps","FPS","HUD","Live frames per second",true);
+        add("coords","Coordinates","HUD","Your current block coordinates",true);
+        add("ping","Ping","HUD","Connection latency",false);
+        add("direction","Direction","HUD","Cardinal facing direction",false);
+        add("health","Health","HUD","Current player health",false);
+        add("speed","Movement speed","HUD","Approximate blocks per second",false);
+        add("time","World time","HUD","Current Minecraft world time",false);
+        add("memory","RAM usage","HUD","Minecraft Java heap usage",false);
+        add("clock","Real clock","HUD","Local time",false);
+        add("session","Playtime","HUD","Time since Minecraft opened",false);
+        add("position","Rotation","HUD","Yaw and pitch readout",false);
+        add("dimension","Dimension","HUD","Current dimension",false);
+        add("zoom","Zoom","Visual","Hold C to zoom your view",true);
+        add("background","HUD backgrounds","Visual","Show translucent HUD backgrounds",true);
+        add("compact","Compact HUD","Visual","Use tighter HUD spacing",false);
+        add("right","Right-side HUD","Visual","Move default HUD alignment to the right",false);
+        KeyMapping.Category cat=KeyMapping.Category.register(Identifier.fromNamespaceAndPath("dashclient","controls"));
+        MENU_KEY=KeyMappingHelper.registerKeyMapping(new KeyMapping("key.dashclient.menu",
+            keyboardType(),InputConstants.KEY_RSHIFT,cat));
+        ZOOM_KEY=KeyMappingHelper.registerKeyMapping(new KeyMapping("key.dashclient.zoom",
+            keyboardType(),InputConstants.KEY_C,cat));
+        EDIT_KEY=KeyMappingHelper.registerKeyMapping(new KeyMapping("key.dashclient.hud",
+            keyboardType(),InputConstants.KEY_J,cat));
+        ClientTickEvents.END_CLIENT_TICK.register(mc->{
+            if(!configLoaded&&mc.options!=null){
+                ClientConfig.load();
+                configLoaded=true;
+            }
+            while(MENU_KEY.consumeClick()) {
+                if(mc.gui.screen() instanceof ClientMenu)mc.gui.setScreen(null);
+                else if(mc.gui.screen()==null)mc.gui.setScreen(new ClientMenu());
+            }
+            while(EDIT_KEY.consumeClick()) {
+                if(mc.gui.screen()==null)mc.gui.setScreen(new HudEditor());
+            }
+            setZoom(mc);
+        });
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("dashclient","hud"),
+            (g,delta)->drawHud(Minecraft.getInstance(),g));
+        LOGGER.info("DashClient 2 initialized: {} original features",FEATURES.size());
     }
-
-    public static Module module(String name) {
-        return MODULE_LOOKUP.get(name);
-    }
-
-    /** Hide common identifying readouts when recording. Not a full privacy guarantee. */
-    private static boolean privateReadout(String name) {
-        String text=name.toLowerCase(java.util.Locale.ROOT);
-        return text.contains("coordinate") || text.contains("server address")
-            || text.contains("username") || text.contains("position")
-            || text.contains("chunk") || text.contains("target name")
-            || text.contains("block xyz") || text.contains("compass")
-            || text.contains("village") || text.contains("freecam")
-            || text.contains("auto miner");
-    }
-
-    @Override
-    public void onInitializeClient() {
-        KeyMapping.Category category = KeyMapping.Category.register(
-            Identifier.fromNamespaceAndPath("dashclient", "controls"));
-        MENU_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.dashclient.menu", keyboardType(),
-            InputConstants.KEY_RSHIFT, category));
-        ZOOM_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.dashclient.zoom", keyboardType(),
-            InputConstants.KEY_C, category));
-        // Alternate hold-to-zoom key, useful if the OS intercepts C.
-        // Existing saved keybinds stay intact when DashClient is upgraded.
-        ZOOM_ALTERNATE_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.dashclient.zoom_alternate", keyboardType(),
-            InputConstants.KEY_Z, category));
-        // Rebindable in Minecraft Settings > Controls > Key Binds > DashClient.
-        AUTO_CLICKER_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.dashclient.auto_clicker", keyboardType(),
-            InputConstants.KEY_K, category));
-        XRAY_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.dashclient.xray", keyboardType(),
-            InputConstants.KEY_X, category));
-        FREECAM_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.dashclient.freecam", keyboardType(),
-            InputConstants.KEY_F6, category));
-        AUTO_MINER_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.dashclient.auto_miner", keyboardType(),
-            InputConstants.KEY_F7, category));
-        VILLAGE_FINDER_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.dashclient.village_finder", keyboardType(),
-            InputConstants.KEY_V, category));
-        EDIT_HUD_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.dashclient.edit_hud", keyboardType(),
-            InputConstants.KEY_J, category));
-        CLEAN_HUD_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.dashclient.clean_hud", keyboardType(),
-            InputConstants.KEY_B, category));
-
-        MODULES.add(new HudModules.Fps());
-        MODULES.add(new HudModules.Coordinates());
-        MODULES.add(new HudModules.Direction());
-        MODULES.add(new HudModules.Clock());
-        MODULES.add(new FullbrightModule());
-        MODULES.add(new SprintModule());
-        MODULES.add(new HudModules.Cps());
-        MODULES.add(new HudModules.ArmorItems());
-        MODULES.add(new ZoomModule());
-        MODULES.add(new PerformanceModule());
-        // Optional HUD modules inspired by popular client information overlays.
-        MODULES.add(new ExtraHudModules.Ping());
-        MODULES.add(new ExtraHudModules.Memory());
-        MODULES.add(new ExtraHudModules.Playtime());
-        MODULES.add(new ExtraHudModules.Keystrokes());
-        MODULES.add(new ExtraHudModules.Effects());
-        MODULES.add(new ExtraHudModules.Biome());
-        MODULES.add(new ExtraHudModules.Chunk());
-        MODULES.add(new ExtraHudModules.Speed());
-        MODULES.add(new ExtraHudModules.Health());
-        MODULES.add(new ExtraHudModules.Hunger());
-        MODULES.add(new ExtraHudModules.Totems());
-        MODULES.add(new ExtraHudModules.ItemCount());
-        MODULES.add(new ExtraHudModules.ItemDurability());
-        MODULES.add(new ExtraHudModules.WorldTime());
-        MODULES.add(new ExtraHudModules.ServerAddress());
-        MODULES.add(new ExtraHudModules.BlockInfo());
-        // HUD, PvP information, navigation and visual customization.
-        InventoryPack.register(MODULES);
-        MODULES.add(new AutoTotemModule());
-        MODULES.add(new AutoElytraModule());
-        MODULES.add(new ElytraFinderModule());
-        MODULES.add(new VillageFinderModule());
-        MODULES.add(MINER);
-        WorldPack.register(MODULES);
-        MODULES.add(XRAY);
-        MODULES.add(FREECAM);
-        StatusPack.register(MODULES);
-        MODULES.add(new PerformanceModule("Extreme FPS", true));
-        MODULES.add(new AdaptiveFpsModule());
-        AdvancedHudPack.register(MODULES);
-        CombatVisualPack.register(MODULES);
-        ClientAssistPack.register(MODULES);
-        MODULES.add(new PerformanceModule("Battery Saver", true, true));
-        ExpandedModulePack.register(MODULES);
-        DeviceHealthPack.register(MODULES);
-        UtilityModulePack.register(MODULES);
-        QualityOfLifePack.register(MODULES);
-        HashMap<String,Module> byName = new HashMap<>();
-        for (Module m : MODULES) {
-            if (byName.putIfAbsent(m.name(), m) != null)
-                throw new IllegalStateException("Duplicate module name: " + m.name());
+    private static void drawHud(Minecraft mc,GuiGraphicsExtractor g){
+        if(mc.player==null||mc.gui.screen() instanceof HudEditor)return;
+        int index=0, sw=mc.getWindow().getGuiScaledWidth(),sh=mc.getWindow().getGuiScaledHeight();
+        for(Feature f:hudFeatures()){
+            String line=readout(f,mc);
+            if(line.isEmpty())continue;
+            int tw=mc.font.width(line);
+            int fallbackX=enabled("right")?sw-tw-12:12;
+            int fallbackY=18+index*(enabled("compact")?11:17);
+            int x=Math.min(sw-tw-2,ClientConfig.x(f,Math.max(2,fallbackX)));
+            int y=Math.min(sh-13,ClientConfig.y(f,fallbackY));
+            if(enabled("background"))g.fill(x-4,y-3,x+tw+5,y+12,0xA10C101B);
+            g.text(mc.font,line,x,y,0xFFF1F5FF,true);
+            index++;
         }
-        MODULE_LOOKUP = Collections.unmodifiableMap(byName);
-        ModuleOrder.load(MODULES);
-        ModuleFavorites.load();
-        HudLayout.load();
-
-        // Suppress real-player inputs before vanilla movement is applied.
-        ClientTickEvents.START_CLIENT_TICK.register(client -> {
-            if (FREECAM.enabled()) FREECAM.beforePlayerTick(client);
-        });
-
-        ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            // Minecraft.Options is null during ClientModInitializer startup.
-            // Apply saved module states after the first completed client tick,
-            // when graphics settings are initialized (Performance Boost and
-            // Extended View both access those options in onEnable()).
-            if (!configLoaded && client.options != null) {
-                Config.load();
-                ClientProfiles.load();
-                configLoaded = true;
-            }
-            AdvancedHudPack.sample(client);
-            ExpandedModulePack.tick(client);
-            QualityOfLifePack.tick(client);
-            HudFrameCache.sample(client);
-            while (MENU_KEY.consumeClick()) {
-                if (client.gui.screen() instanceof DashScreen)
-                    client.gui.setScreen(null);
-                else if (client.gui.screen() == null)
-                    client.gui.setScreen(new DashScreen());
-            }
-            while (EDIT_HUD_KEY.consumeClick()) {
-                if (client.gui.screen() == null)
-                    client.gui.setScreen(new HudEditorScreen());
-            }
-            while (CLEAN_HUD_KEY.consumeClick()) {
-                if (client.gui.screen() != null || client.player == null) continue;
-                for (Module m : MODULES) {
-                    if (!m.name().equals("Clean Screenshot HUD")) continue;
-                    m.setEnabled(!m.enabled());
-                    Config.save();
-                    client.gui.hud.setOverlayMessage(Component.literal(
-                        "DashClient HUD: " + (m.enabled() ? "HIDDEN" : "VISIBLE")), true);
-                    break;
-                }
-            }
-            while (AUTO_MINER_KEY.consumeClick()) {
-                if (client.gui.screen() != null || client.player == null) continue;
-                if (MINER.enabled()) {
-                    MINER.setEnabled(false); // emergency stop
-                } else {
-                    MINER.setEnabled(true); // opens the item picker next tick
-                }
-                Config.save();
-            }
-            while (FREECAM_KEY.consumeClick()) {
-                // Never enable or disable Freecam while entering chat/search text.
-                if (client.gui.screen() != null || client.player == null) continue;
-                FREECAM.setEnabled(!FREECAM.enabled());
-                Config.save();
-                client.gui.hud.setOverlayMessage(Component.literal(
-                    "DashClient Freecam: " + (FREECAM.enabled() ? "ON (F6 to exit)" : "OFF")), true);
-            }
-            while (VILLAGE_FINDER_KEY.consumeClick()) {
-                // V is safe to press while exploring, but not while typing.
-                if (client.gui.screen() != null || client.player == null) continue;
-                Module finder = module("Village Finder");
-                if (finder == null) continue;
-                finder.setEnabled(!finder.enabled());
-                Config.save();
-                client.gui.hud.setOverlayMessage(Component.literal(
-                    "Village Finder: " + (finder.enabled() ? "ON" : "OFF")), true);
-            }
-            while (XRAY_KEY.consumeClick()) {
-                // Prevent accidental toggling while typing or navigating menus.
-                if (client.gui.screen() != null || client.player == null) continue;
-                XRAY.setEnabled(!XRAY.enabled());
-                Config.save();
-                client.gui.hud.setOverlayMessage(Component.literal(
-                    "DashClient X-Ray: " + (XRAY.enabled() ? "ON" : "OFF")), true);
-            }
-            while (AUTO_CLICKER_KEY.consumeClick()) {
-                // Never toggle accidentally while typing in search or chat.
-                if (client.gui.screen() != null || client.player == null) continue;
-                for (Module module : MODULES) {
-                    if (!module.name().equals("Auto Clicker")) continue;
-                    module.setEnabled(!module.enabled());
-                    Config.save();
-                    client.gui.hud.setOverlayMessage(Component.literal(
-                        "DashClient Auto Clicker: " + (module.enabled() ? "ON" : "OFF")), true);
-                    break;
-                }
-            }
-            for (Module module : MODULES) {
-                if (!module.enabled()) continue;
-                try {
-                    module.onTick(client);
-                } catch (RuntimeException e) {
-                    LOGGER.error("Disabling malfunctioning module {} after tick exception",
-                        module.name(), e);
-                    try {
-                        module.setEnabled(false);
-                    } catch (RuntimeException disableFailure) {
-                        LOGGER.error("Module {} also failed while disabling",
-                            module.name(), disableFailure);
-                    }
-                    Config.save();
-                }
-            }
-        });
-
-        HudElementRegistry.addLast(
-            Identifier.fromNamespaceAndPath("dashclient", "overlay"), (graphics, delta) -> {
-                Minecraft client = Minecraft.getInstance();
-                if (client.player == null || client.gui.screen() instanceof HudEditorScreen
-                        || isEnabled("Clean Screenshot HUD"))
-                    return;
-                if (isEnabled("HUD Gameplay Only") && client.gui.screen() != null) return;
-
-                int sw = client.getWindow().getGuiScaledWidth();
-                int sh = client.getWindow().getGuiScaledHeight();
-                int gap = isEnabled("HUD Compact") ? 11 : 14;
-                boolean right = isEnabled("HUD Right Align");
-                boolean rainbow = isEnabled("HUD Rainbow");
-                boolean transparent = isEnabled("HUD Transparent");
-                int ordinal = 0;
-
-                // Icon HUDs render from current equipment every frame, allowing
-                // enchanted glint, durability bars and the totem count to update.
-                boolean privacyMode = isEnabled("Streamer Privacy HUD");
-                for (Module module : HudFrameCache.customModules()) {
-                    if (privacyMode && privateReadout(module.name())) continue;
-                    HudLayout.Point position = HudLayout.position(module, 0, sw, sh,
-                        module.hudWidth(client), module.hudHeight(client), gap, right);
-                    if (position != null)
-                        module.renderHud(client, graphics, position.x(), position.y());
-                }
-
-                for (HudFrameCache.Line line : HudFrameCache.lines()) {
-                    Module module = line.module();
-                    if (privacyMode && privateReadout(module.name()))
-                        continue;
-                    int tw = line.width();
-                    String value = line.text();
-                    HudLayout.Point pos = HudLayout.position(module, ordinal++, sw, sh,
-                        tw, gap, right);
-                    if (pos == null) continue;
-                    int x = pos.x(), y = pos.y();
-                    if (!transparent)
-                        graphics.fill(x - 4, y - 2, x + tw + 4, y + 11, 0x880D1421);
-                    int color = rainbow ? (java.awt.Color.HSBtoRGB(
-                        ((System.currentTimeMillis() / 28L + ordinal * 18L) % 360L) / 360f,
-                        0.72f, 1f) | 0xFF000000) : 0xFFFFFFFF;
-                    graphics.text(client.font, value, x, y, color, true);
-                }
-            }
-        );
-        HudElementRegistry.addLast(
-            Identifier.fromNamespaceAndPath("dashclient", "ore_xray"), (graphics, delta) -> {
-                Minecraft client = Minecraft.getInstance();
-                if (XRAY.enabled() && !isEnabled("Clean Screenshot HUD"))
-                    XRAY.renderOverlay(client, graphics);
-            }
-        );
-        LOGGER.info("DashClient initialized");
     }
 }
