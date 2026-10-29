@@ -62,7 +62,7 @@ public final class DashClient implements ClientModInitializer {
                 var info=connection==null?null:connection.getPlayerInfo(mc.player.getUUID());
                 yield "Ping  "+(info==null?"--":info.getLatency()+" ms");
             }
-            case "time" -> "World Time  "+(mc.level==null?0:mc.level.getDayTime()%24000);
+            case "time" -> "World Age  "+(mc.level==null?0:mc.level.getLevelData().getGameTime()%24000);
             case "memory" -> {
                 Runtime rt=Runtime.getRuntime();
                 yield "RAM  "+((rt.totalMemory()-rt.freeMemory())/(1024*1024))+" MB";
@@ -99,7 +99,7 @@ public final class DashClient implements ClientModInitializer {
         add("direction","Direction","HUD","Cardinal facing direction",false);
         add("health","Health","HUD","Current player health",false);
         add("speed","Movement speed","HUD","Approximate blocks per second",false);
-        add("time","World time","HUD","Current Minecraft world time",false);
+        add("time","World age","HUD","World age in Minecraft ticks",false);
         add("memory","RAM usage","HUD","Minecraft Java heap usage",false);
         add("clock","Real clock","HUD","Local time",false);
         add("session","Playtime","HUD","Time since Minecraft opened",false);
