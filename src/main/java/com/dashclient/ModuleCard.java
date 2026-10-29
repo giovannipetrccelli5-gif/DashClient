@@ -16,11 +16,11 @@ public final class ModuleCard {
     public boolean containsToggle(double mx,double my){
         return mx>=x+w-48&&mx<x+w-6&&my>=y+6&&my<y+29;
     }
-    public void draw(GuiGraphicsExtractor g,Font font,int mx,int my,boolean selected){
-        boolean hovered=contains(mx,my);
+    public void draw(GuiGraphicsExtractor g,Font font,int mx,int my,boolean selected,
+                     float hoverProgress,float toggleProgress){
         DashTheme.rounded(g,x,y,w,h,selected?DashTheme.ACCENT:DashTheme.LINE);
         DashTheme.rounded(g,x+1,y+1,w-2,h-2,
-            hovered?DashTheme.CARD_HOVER:DashTheme.CARD);
+            DashTheme.mix(DashTheme.CARD,DashTheme.CARD_HOVER,hoverProgress));
         if(selected)g.fill(x+2,y+6,x+4,y+h-6,DashTheme.BRIGHT);
 
         // The category badge gives every card a visually consistent icon.
@@ -35,7 +35,7 @@ public final class ModuleCard {
         String description=DashTheme.fit(font,feature.description,Math.max(24,w-98));
         g.text(font,description,x+43,y+25,DashTheme.MUTED,false);
 
-        DashTheme.switcher(g,x+w-46,y+10,feature.enabled);
+        DashTheme.switcher(g,x+w-46,y+10,toggleProgress);
         if(h>=58){
             String status=feature.enabled?"ENABLED":"DISABLED";
             g.text(font,status,x+12,y+h-15,
