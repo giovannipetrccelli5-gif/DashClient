@@ -41,8 +41,9 @@ jobs:
             esac
             gradle clean build --no-daemon -Pminecraft_version="$mc" -Pfabric_api_version="$api"
             cp build/libs/dashclient-2.0.0.jar "dist/dashclient-2.0.0-mc$mc.jar"
+            python3 scripts/package_micro_mods.py "$mc"
           done
-      - name: Validate versions and create ZIP downloads
+      - name: Validate client versions and create ZIP downloads
         run: |
           python3 - <<'PY'
           import json, zipfile
