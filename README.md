@@ -1,5 +1,22 @@
 # DashClient
 
+## Graphite dashboard & saved profiles (October 2026)
+
+Right Shift opens the redesigned DashClient module dashboard. It uses original
+DashClient graphics (graphite panels, indigo accents, green/red module state
+rails) with searchable Combat, Visuals, HUD, FPS, World, Survival, Movement and
+Extras categories, favorites, enabled-only filtering, arrange mode and a
+40px touch-friendly card layout. The new **PROFILES** button opens the separate
+Main / PvP / FPS / Survival module configurations. Profiles preserve module
+on/off choices independently. **Auto Miner is never restarted by switching
+profiles**. Keybinds and HUD positions remain global; profile names describe
+save slots rather than guaranteeing a specific gameplay setup. Use the existing
+HUD editor to drag readouts, and SETTINGS for the performance presets.
+
+DashClient is not Lunar Client, is not associated with it, and includes none
+of its proprietary assets or source code. A passing GitHub build checks
+compilation and JAR metadata, not in-game FPS or crash-free gameplay.
+
 A client-side Fabric module collection for **Minecraft 1.21.11 and all stable releases through 26.3**.
 The 1.21.11 build targets Java 21; 26.x builds target Java 25.
 Built with GitHub Actions. Compatible with other optimization mods because
