@@ -1,0 +1,40 @@
+name: Export website installer JARs
+on:
+  push:
+    paths:
+      - '.github/workflows/export-website-installers.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch private release JARs for the public-facing website package
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p installers
+          gh release download dev-build --repo "${{ github.repository }}" --pattern 'dashclient-2.0.0-mc*.jar' --dir installers
+          python3 - <<'PY'
+          import zipfile,json
+          from pathlib import Path
+          required=('1.21.11','26.1','26.1.1','26.1.2','26.2','26.3')
+          for mc in required:
+              p=Path('installers')/f'dashclient-2.0.0-mc{mc}.jar'
+              assert p.is_file(),p
+              with zipfile.ZipFile(p) as z:
+                  assert z.testzip() is None
+                  d=json.loads(z.read('fabric.mod.json'))
+                  assert d['depends']['minecraft']==mc,(p,d)
+                  assert 'com/dashclient/DashClient.class' in z.namelist()
+          print('Validated 6 version-matched JARs for website package')
+          PY
+      - name: Package jars as downloadable workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashclient-website-installers
+          path: installers/*.jar
+          retention-days: 3
