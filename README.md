@@ -24,3 +24,6 @@ DashClient is **not Lunar Client** and is not affiliated with Lunar Client. No L
 
 ## Builds
 GitHub Actions targets: Minecraft Java 1.21.11, 26.1, 26.1.1, 26.1.2, 26.2 and 26.3. Build artifacts are only ready when the workflow passes. A build verifies compilation; real-device playtesting is still necessary.
+
+## License — All Rights Reserved
+DashClient's original code, assets, and documentation are **proprietary**. You may download and run official unmodified compiled builds for personal, non-commercial gameplay, but you may **not** reuse, modify, redistribute, rebrand, or sell original DashClient material without written permission from the project owner, except as allowed by law or platform terms. Third-party libraries and assets retain their own licenses. See [LICENSE.md](LICENSE.md) for the full notice.
