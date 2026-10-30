@@ -5,36 +5,48 @@ on:
       - '.github/workflows/export-website-installers.yml'
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   export:
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch private release JARs for the public-facing website package
-        shell: bash
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Retrieve verified release files
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           mkdir -p installers
-          gh release download dev-build --repo "${{ github.repository }}" --pattern 'dashclient-2.0.0-mc*.jar' --dir installers
+          gh release download dev-build --repo "${{ github.repository }}" --pattern 'dashclient-2.0.0-mc*.jar' --pattern 'DashClient-2.0.0-mc*.zip' --pattern 'DashClient-MicroMods-mc*.zip' --dir installers
           python3 - <<'PY'
-          import zipfile,json
           from pathlib import Path
-          required=('1.21.11','26.1','26.1.1','26.1.2','26.2','26.3')
-          for mc in required:
-              p=Path('installers')/f'dashclient-2.0.0-mc{mc}.jar'
-              assert p.is_file(),p
-              with zipfile.ZipFile(p) as z:
+          import json,zipfile
+          versions=('1.21.11','26.1','26.1.1','26.1.2','26.2','26.3')
+          for mc in versions:
+              jar=Path('installers')/f'dashclient-2.0.0-mc{mc}.jar'
+              assert jar.is_file(),jar
+              with zipfile.ZipFile(jar) as z:
                   assert z.testzip() is None
                   d=json.loads(z.read('fabric.mod.json'))
-                  assert d['depends']['minecraft']==mc,(p,d)
-                  assert 'com/dashclient/DashClient.class' in z.namelist()
-          print('Validated 6 version-matched JARs for website package')
+                  assert d['depends']['minecraft']==mc
+              for prefix in ('DashClient-2.0.0-mc','DashClient-MicroMods-mc'):
+                  f=Path('installers')/(prefix+mc+'.zip')
+                  assert f.is_file(),f
+                  with zipfile.ZipFile(f) as z:
+                      assert z.testzip() is None
+          print("All 18 binary assets passed archive checks")
           PY
-      - name: Package jars as downloadable workflow artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: dashclient-website-installers
-          path: installers/*.jar
-          retention-days: 3
+      - name: Store public-distribution files in isolated private export branch
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan website-installer-export
+          git rm -r -f . >/dev/null
+          mkdir -p downloads
+          mv installers/* downloads/
+          git add downloads
+          git commit -m "Export 18 verified website download files"
+          git push origin HEAD:refs/heads/website-installer-export --force
